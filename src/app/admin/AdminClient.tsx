@@ -77,7 +77,7 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Admin Panel</h1>
         <div className="flex items-center gap-2">
-          <LinkButton href="/admin/recap" variant="outline" size="sm">Weekly Recap</LinkButton>
+          <LinkButton href="/admin/recap" size="sm">Weekly Recap</LinkButton>
           <LinkButton href="/admin/settings" variant="outline" size="sm">Settings</LinkButton>
           <LinkButton href="/" variant="ghost" size="sm">← Dashboard</LinkButton>
         </div>
@@ -215,7 +215,10 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
                 {user.role !== "admin" && user.status !== "pending" && (
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
+                    className={user.status === "active"
+                      ? "text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                      : ""}
                     onClick={() => toggleStatus(user.id, user.status)}
                   >
                     {user.status === "active" ? "Deactivate" : "Activate"}

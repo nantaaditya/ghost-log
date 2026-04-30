@@ -9,6 +9,7 @@ import { LinkButton } from "@/components/ui/link-button";
 import { getCurrentWeekId } from "@/lib/week/iso-week";
 import SignOutButton from "@/components/SignOutButton";
 import CommunicationGuide from "@/components/dashboard/CommunicationGuide";
+import { ShieldCheck } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -37,7 +38,10 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <LinkButton href="/admin" variant="outline" size="sm">Admin</LinkButton>
+            <LinkButton href="/admin" variant="secondary" size="sm" className="gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Admin
+            </LinkButton>
           )}
           <SignOutButton />
         </div>
@@ -77,10 +81,14 @@ export default async function DashboardPage() {
                   <Badge variant={report.status === "submitted" ? "default" : "secondary"}>
                     {report.status}
                   </Badge>
-                  {report.status === "submitted" && (
-                    <LinkButton href={`/report/${report.weekId}/view`} variant="ghost" size="sm">View</LinkButton>
+                  {report.status === "submitted" ? (
+                    <>
+                      <LinkButton href={`/report/${report.weekId}/view`} variant="outline" size="sm">View</LinkButton>
+                      <LinkButton href={`/report/${report.weekId}`} variant="ghost" size="sm" className="text-muted-foreground">Re-edit</LinkButton>
+                    </>
+                  ) : (
+                    <LinkButton href={`/report/${report.weekId}`} size="sm">Continue</LinkButton>
                   )}
-                  <LinkButton href={`/report/${report.weekId}`} variant="ghost" size="sm">Edit</LinkButton>
                 </div>
               </div>
             ))}

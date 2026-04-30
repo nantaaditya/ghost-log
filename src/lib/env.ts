@@ -2,7 +2,8 @@ import { z } from "zod";
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  RESEND_API_KEY: z.string().min(1),
+  EMAIL_FROM: z.string().email(),
+  EMAIL_PASSWORD: z.string().min(1),
   MICROSOFT_CLIENT_ID: z.string().min(1),
   MICROSOFT_CLIENT_SECRET: z.string().min(1),
   NEXTAUTH_SECRET: z.string().min(1),

@@ -1,7 +1,15 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { env } from "@/lib/env";
 
-const resend = new Resend(env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: "smtp.zoho.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: env.EMAIL_FROM,
+    pass: env.EMAIL_PASSWORD,
+  },
+});
 
 export async function sendInviteEmail(params: {
   to: string;
@@ -10,10 +18,10 @@ export async function sendInviteEmail(params: {
 }): Promise<void> {
   const { to, inviteUrl, inviterName } = params;
 
-  await resend.emails.send({
-    from: "Alamak Team <onboarding@resend.dev>",
+  await transporter.sendMail({
+    from: `Alamak Team <${env.EMAIL_FROM}>`,
     to,
-    subject: "You've been invited to Alamak Team",
+    subject: "You've been invited to Alamak Team Ghost Logs",
     html: `
       <p>Hi,</p>
       <p>${inviterName} has invited you to join <strong>Alamak Team</strong> — the weekly report platform.</p>
