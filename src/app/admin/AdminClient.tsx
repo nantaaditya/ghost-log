@@ -75,7 +75,10 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Admin Panel</h1>
+        <div>
+          <h1 className="text-2xl font-semibold">Admin Panel</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Team management &amp; reports</p>
+        </div>
         <div className="flex items-center gap-2">
           <LinkButton href="/admin/recap" size="sm">Weekly Recap</LinkButton>
           <LinkButton href="/admin/settings" variant="outline" size="sm">Settings</LinkButton>
@@ -100,8 +103,13 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
             </Alert>
           )}
           <div className="flex items-center gap-3">
-            <Badge variant={onedriveConnected ? "default" : "secondary"}>
-              {onedriveConnected ? "Connected" : "Not connected"}
+            <Badge
+              variant="outline"
+              className={onedriveConnected
+                ? "border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400"
+                : "border-muted-foreground/30 text-muted-foreground"}
+            >
+              {onedriveConnected ? "● Connected" : "○ Not connected"}
             </Badge>
             <a
               href="/api/onedrive/connect"

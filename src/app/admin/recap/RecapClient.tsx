@@ -36,6 +36,7 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
   const router = useRouter();
   const [summary, setSummary] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [savedPath, setSavedPath] = useState<string | null>(null);
 
   const missing = memberRecaps.filter((m) => m.report === null);
   const present = memberRecaps.filter((m) => m.report !== null);
@@ -58,6 +59,12 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
       const json = await res.json();
       if (json.success) {
         setSummary(json.data.summary);
+        setSavedPath(json.data.savedPath ?? null);
+        if (json.data.savedToOneDrive) {
+          toast.success("Summary saved to OneDrive");
+        } else {
+          toast.warning("Summary generated but could not save to OneDrive");
+        }
       } else {
         toast.error(json.error ?? "Failed to generate summary");
       }
@@ -367,6 +374,11 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
                 Copy
               </Button>
             </div>
+            {savedPath && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Saved to OneDrive: <span className="font-mono">{savedPath}</span>
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{summary}</p>

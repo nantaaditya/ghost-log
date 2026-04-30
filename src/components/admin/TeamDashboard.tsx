@@ -89,10 +89,16 @@ export default async function TeamDashboard() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            {(["on-track", "at-risk", "off-track"] as const).map((h) => (
-              <div key={h} className="border rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold">{healthCounts[h]}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{HEALTH_LABELS[h]}</p>
+            {(
+              [
+                { key: "on-track", cls: "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/40", numCls: "text-green-700 dark:text-green-400" },
+                { key: "at-risk", cls: "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40", numCls: "text-amber-700 dark:text-amber-400" },
+                { key: "off-track", cls: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40", numCls: "text-red-700 dark:text-red-400" },
+              ] as const
+            ).map(({ key, cls, numCls }) => (
+              <div key={key} className={`border rounded-lg p-3 text-center ${cls}`}>
+                <p className={`text-2xl font-bold ${numCls}`}>{healthCounts[key]}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{HEALTH_LABELS[key]}</p>
               </div>
             ))}
           </div>

@@ -11,7 +11,7 @@ const envSchema = z.object({
   TOKEN_ENCRYPTION_KEY: z.string().min(32),
   ONEDRIVE_BASE_PATH: z.string().default("nanta-obsidian/work/report"),
   ADMIN_EMAIL: z.string().email(),
-  ANTHROPIC_API_KEY: z.string().min(1),
+  GEMINI_API_KEY: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

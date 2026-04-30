@@ -13,6 +13,11 @@ export function buildReporterFolderPath(reporterName: string): string {
   return `${env.ONEDRIVE_BASE_PATH}/${reporterName}`;
 }
 
+export function buildSummaryPath(weekId: string): string {
+  assertSafeWeekId(weekId);
+  return `${env.ONEDRIVE_BASE_PATH}/${weekId}_summary.md`;
+}
+
 function assertSafeName(value: string, field: string): void {
   if (!SAFE_NAME_REGEX.test(value)) {
     throw new Error(`Invalid ${field}: contains disallowed characters`);
