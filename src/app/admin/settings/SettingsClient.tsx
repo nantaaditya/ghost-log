@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { toast } from "sonner";
 
 type Props = { name: string; email: string };
@@ -84,11 +86,11 @@ export default function SettingsClient({ name: initialName, email: initialEmail 
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <LinkButton href="/admin" variant="ghost" size="sm">← Admin</LinkButton>
-        <h1 className="text-xl font-semibold">Account Settings</h1>
-      </div>
+    <PageShell maxWidth="2xl">
+      <PageHeader
+        title="Account Settings"
+        actions={<LinkButton href="/admin" variant="ghost" size="sm">← Admin</LinkButton>}
+      />
 
       {/* Profile */}
       <Card>
@@ -135,6 +137,7 @@ export default function SettingsClient({ name: initialName, email: initialEmail 
             </div>
             <Button
               type="submit"
+              className="w-full sm:w-auto"
               disabled={
                 savingProfile ||
                 (profileName === initialName && profileEmail === initialEmail)
@@ -186,12 +189,12 @@ export default function SettingsClient({ name: initialName, email: initialEmail 
                 minLength={8}
               />
             </div>
-            <Button type="submit" disabled={savingPw}>
+            <Button type="submit" disabled={savingPw} className="w-full sm:w-auto">
               {savingPw ? "Saving…" : "Update password"}
             </Button>
           </form>
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

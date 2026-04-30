@@ -1,23 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SECTION_META, GUIDE_PRINCIPLES } from "@/lib/report/section-meta";
 
+const STORAGE_KEY = "guide-open";
+
 export default function CommunicationGuide() {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
+
+  // Restore persisted preference after hydration
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored !== null) setOpen(stored === "true");
+  }, []);
+
+  function toggle() {
+    setOpen((v) => {
+      const next = !v;
+      localStorage.setItem(STORAGE_KEY, String(next));
+      return next;
+    });
+  }
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="py-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Communication Structuring Guide</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            <b>Communication Structuring Guide</b>
+          </CardTitle>
           <button
-            onClick={() => setOpen((v) => !v)}
+            onClick={toggle}
             aria-expanded={open}
             aria-controls="guide-content"
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1 rounded"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1 rounded min-h-8 min-w-8 flex items-center justify-center"
           >
             {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>

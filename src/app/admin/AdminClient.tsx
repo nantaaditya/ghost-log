@@ -9,7 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LinkButton } from "@/components/ui/link-button";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { toast } from "sonner";
+import { FileText } from "lucide-react";
 import type { User } from "@/lib/db/schema";
 
 type ReportRow = {
@@ -34,57 +38,74 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviting(true);
-    const res = await fetch("/api/admin/invite", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: inviteEmail, name: inviteName }),
-    });
-    const json = await res.json();
-    setInviting(false);
-
-    if (json.success) {
-      toast.success(`Invite sent to ${inviteEmail}`);
-      setInviteEmail("");
-      setInviteName("");
-    } else {
-      toast.error(json.error ?? "Failed to send invite");
+    try {
+      const res = await fetch("/api/admin/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail, name: inviteName }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`Invite sent to ${inviteEmail}`);
+        setInviteEmail("");
+        setInviteName("");
+      } else {
+        toast.error(json.error ?? "Failed to send invite");
+      }
+    } catch {
+      toast.error("Network error — please try again");
+    } finally {
+      setInviting(false);
     }
   }
 
   async function toggleStatus(userId: string, currentStatus: string) {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
-    const res = await fetch(`/api/admin/users/${userId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    const json = await res.json();
-    if (json.success) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: newStatus as User["status"] } : u))
-      );
-    } else {
-      toast.error("Failed to update user");
+    setTogglingIds((prev) => new Set(prev).add(userId));
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, status: newStatus as User["status"] } : u))
+        );
+        toast.success(newStatus === "active" ? "User activated" : "User deactivated");
+      } else {
+        toast.error("Failed to update user");
+      }
+    } catch {
+      toast.error("Network error — please try again");
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
     }
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Admin Panel</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Team management &amp; reports</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <LinkButton href="/admin/recap" size="sm">Weekly Recap</LinkButton>
-          <LinkButton href="/admin/settings" variant="outline" size="sm">Settings</LinkButton>
-          <LinkButton href="/" variant="ghost" size="sm">← Dashboard</LinkButton>
-        </div>
-      </div>
+    <PageShell maxWidth="4xl">
+      <PageHeader
+        title="Admin Panel"
+        subtitle="Team management & reports"
+        actions={
+          <>
+            <LinkButton href="/" variant="ghost" size="sm">← Dashboard</LinkButton>
+            <LinkButton href="/admin/recap" size="sm">Weekly Recap</LinkButton>
+            <LinkButton href="/admin/settings" variant="outline" size="sm">Settings</LinkButton>
+          </>
+        }
+      />
 
       {/* OneDrive Connection */}
       <Card>
@@ -102,7 +123,7 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
               <AlertDescription>OneDrive connected successfully!</AlertDescription>
             </Alert>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Badge
               variant="outline"
               className={onedriveConnected
@@ -127,8 +148,8 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
           <CardTitle className="text-base">Invite Team Member</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleInvite} className="flex gap-2 items-end">
-            <div className="space-y-1 flex-1">
+          <form onSubmit={handleInvite} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <div className="space-y-1">
               <Label htmlFor="invite-name">Display name</Label>
               <Input
                 id="invite-name"
@@ -138,7 +159,7 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
                 required
               />
             </div>
-            <div className="space-y-1 flex-1">
+            <div className="space-y-1">
               <Label htmlFor="invite-email">Email</Label>
               <Input
                 id="invite-email"
@@ -149,7 +170,7 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
                 required
               />
             </div>
-            <Button type="submit" disabled={inviting}>
+            <Button type="submit" disabled={inviting} className="w-full sm:w-auto">
               {inviting ? "Sending…" : "Send invite"}
             </Button>
           </form>
@@ -166,11 +187,15 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
         </CardHeader>
         <CardContent>
           {allReports.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-2">No reports submitted yet.</p>
+            <EmptyState
+              icon={<FileText className="h-5 w-5" />}
+              title="No reports yet"
+              description="Once team members submit their weekly reports, they'll appear here."
+            />
           ) : (
             <div className="divide-y">
               {allReports.map((report) => (
-                <div key={report.id} className="flex items-center justify-between py-3">
+                <div key={report.id} className={`py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-l-2 pl-3 -ml-px ${report.status === "draft" ? "border-amber-400" : "border-transparent"}`}>
                   <div>
                     <p className="font-medium text-sm">{report.userName}</p>
                     <p className="text-xs text-muted-foreground">
@@ -180,15 +205,16 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
                         : "not submitted"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant={report.status === "submitted" ? "default" : "secondary"}>
                       {report.status}
                     </Badge>
                     {report.status === "submitted" && (
                       <LinkButton
                         href={`/admin/reports/${report.userId}/${report.weekId}`}
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
+                        className="min-h-11 sm:min-h-0"
                       >
                         View
                       </LinkButton>
@@ -208,12 +234,12 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
         </CardHeader>
         <CardContent className="divide-y">
           {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between py-3">
+            <div key={user.id} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-sm">{user.name}</p>
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={
                   user.status === "active" ? "default" :
                   user.status === "pending" ? "secondary" : "outline"
@@ -223,13 +249,14 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
                 {user.role !== "admin" && user.status !== "pending" && (
                   <Button
                     size="sm"
-                    variant="outline"
-                    className={user.status === "active"
-                      ? "text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
-                      : ""}
+                    variant={user.status === "active" ? "destructive" : "outline"}
+                    disabled={togglingIds.has(user.id)}
+                    className="min-h-11 sm:min-h-0"
                     onClick={() => toggleStatus(user.id, user.status)}
                   >
-                    {user.status === "active" ? "Deactivate" : "Activate"}
+                    {togglingIds.has(user.id)
+                      ? "Updating…"
+                      : user.status === "active" ? "Deactivate" : "Activate"}
                   </Button>
                 )}
               </div>
@@ -237,6 +264,6 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
           ))}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

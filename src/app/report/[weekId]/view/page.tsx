@@ -7,6 +7,10 @@ import { isValidWeekId } from "@/lib/week/iso-week";
 import { readFile } from "@/lib/graph/files";
 import { buildReportPath } from "@/lib/graph/paths";
 import { LinkButton } from "@/components/ui/link-button";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -44,25 +48,33 @@ export default async function ViewReportPage({ params }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">{weekId}</h1>
-          <p className="text-sm text-muted-foreground">{user.name}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <LinkButton href={`/report/${weekId}`} variant="outline" size="sm">
-            Edit
-          </LinkButton>
-          <LinkButton href="/" variant="ghost" size="sm">
-            ← Dashboard
-          </LinkButton>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title={weekId}
+        subtitle={user.name}
+        actions={
+          <>
+            <LinkButton href={`/report/${weekId}`} variant="outline" size="sm"
+              className="min-h-11 sm:min-h-0">Edit</LinkButton>
+            <LinkButton href="/" variant="ghost" size="sm"
+              className="min-h-11 sm:min-h-0">← Dashboard</LinkButton>
+          </>
+        }
+      />
 
-      <div className="rounded-lg border bg-white p-6 prose prose-sm max-w-none">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
-      </div>
-    </div>
+      {markdown.trim() ? (
+        <div className="rounded-lg border bg-card p-4 sm:p-6 prose prose-sm max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-card">
+          <EmptyState
+            icon={<FileText className="h-5 w-5" />}
+            title="Report is empty"
+            description="This report was submitted but contains no content."
+          />
+        </div>
+      )}
+    </PageShell>
   );
 }

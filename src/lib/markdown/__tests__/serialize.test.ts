@@ -50,7 +50,7 @@ describe("serializeReport", () => {
     expect(md).toContain("**Ask:** Unblock WAF rule");
   });
 
-  it("emits jiraLink when set on an escalation", () => {
+  it("emits jiraLinks when set on an escalation", () => {
     const data: ReportData = {
       ...base,
       escalations: [{
@@ -60,14 +60,15 @@ describe("serializeReport", () => {
         impact: "i",
         actionsTaken: "a",
         ask: "q",
-        jiraLink: "https://jira.example.com/browse/CMS-123",
+        jiraLinks: ["https://jira.example.com/browse/CMS-123", "https://jira.example.com/browse/CMS-456"],
       }],
     };
     const md = serializeReport(data);
     expect(md).toContain("**Jira:** https://jira.example.com/browse/CMS-123");
+    expect(md).toContain("**Jira:** https://jira.example.com/browse/CMS-456");
   });
 
-  it("omits jiraLink line when not set", () => {
+  it("omits jiraLinks line when not set", () => {
     const data: ReportData = {
       ...base,
       escalations: [{

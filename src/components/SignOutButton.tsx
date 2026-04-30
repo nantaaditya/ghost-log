@@ -8,7 +8,7 @@ export default function SignOutButton() {
     <Button
       variant="outline"
       size="sm"
-      className="text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+      className="border-destructive/50 text-destructive hover:bg-destructive hover:text-white hover:border-destructive transition-colors"
       onClick={() => signOut({ callbackUrl: "/signin" })}
     >
       Sign out

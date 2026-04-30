@@ -9,9 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { SECTION_META } from "@/lib/report/section-meta";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { serializeReport } from "@/lib/markdown/serialize";
@@ -35,10 +38,57 @@ type Props = {
   onSubmit: (data: ReportData) => Promise<void>;
 };
 
+function JiraLinksInput({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (v: string[]) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      {value.map((link, i) => (
+        <div key={i} className="flex gap-2">
+          <Input
+            type="url"
+            value={link}
+            onChange={(e) => {
+              const next = [...value];
+              next[i] = e.target.value;
+              onChange(next);
+            }}
+            placeholder="https://jira.example.com/browse/PROJ-123"
+            className="flex-1 text-sm"
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            className="shrink-0"
+            onClick={() => onChange(value.filter((_, j) => j !== i))}
+          >
+            ✕
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={() => onChange([...value, ""])}
+      >
+        + Add Jira link
+      </Button>
+    </div>
+  );
+}
+
 export default function ReportForm({ reporterName, weekId, initial, backHref, onSubmit }: Props) {
   const currentWeekId = weekId ?? getCurrentWeekId();
   const [submitting, setSubmitting] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [submitError, setSubmitError] = useState("");
 
   const defaultValues: ReportData = {
     reporterName,
@@ -63,7 +113,6 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
 
   const formData = watch();
 
-  // Restore draft on mount
   useEffect(() => {
     if (initial) return;
     const saved = localStorage.getItem(`${DRAFT_KEY}-${currentWeekId}`);
@@ -73,19 +122,24 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
     }
   }, [currentWeekId, initial, reset]);
 
-  // Auto-save draft
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem(`${DRAFT_KEY}-${currentWeekId}`, JSON.stringify(formData));
+      setLastSaved(new Date());
     }, 2000);
     return () => clearTimeout(timer);
   }, [formData, currentWeekId]);
 
   async function submit(data: ReportData) {
     setSubmitting(true);
+    setSubmitError("");
     try {
       await onSubmit(data);
       localStorage.removeItem(`${DRAFT_KEY}-${currentWeekId}`);
+      toast.success("Report submitted");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to submit report — please try again";
+      setSubmitError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -94,24 +148,29 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
   const preview = serializeReport({ ...formData, reporterName });
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {backHref && (
+    <PageShell maxWidth="4xl" className="space-y-4">
+      <PageHeader
+        title="Weekly Report"
+        subtitle={currentWeekId}
+        leading={
+          backHref ? (
             <LinkButton href={backHref} variant="ghost" size="sm">← Back</LinkButton>
-          )}
-          <div>
-            <h1 className="text-xl font-semibold">Weekly Report</h1>
-            <p className="text-sm text-muted-foreground">{currentWeekId}</p>
+          ) : undefined
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            {draftRestored && <Badge variant="outline">Draft restored</Badge>}
+            {lastSaved && (
+              <span className="text-xs text-muted-foreground">
+                Auto-saved {lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
           </div>
-        </div>
-        {draftRestored && (
-          <Badge variant="outline">Draft restored</Badge>
-        )}
-      </div>
+        }
+      />
 
       <Tabs defaultValue="edit">
-        <TabsList>
+        <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="edit">Edit</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
@@ -131,7 +190,7 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
                   name="healthIndicator"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-full sm:w-48">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -154,20 +213,28 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
               <CardContent className="space-y-4">
                 {escalations.fields.map((field, i) => (
                   <div key={field.id} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex gap-2">
-                      <Input placeholder="Product · Client" {...register(`escalations.${i}.project`)} />
-                      <Input placeholder="Topic" {...register(`escalations.${i}.topic`)} />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => escalations.remove(i)}>✕</Button>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input className="sm:flex-1" placeholder="Product · Client" {...register(`escalations.${i}.project`)} />
+                      <Input className="sm:flex-1" placeholder="Topic" {...register(`escalations.${i}.topic`)} />
+                      <Button type="button" variant="destructive" size="sm"
+                        className="self-end sm:self-auto min-h-9"
+                        onClick={() => escalations.remove(i)}>✕</Button>
                     </div>
                     <Textarea placeholder="Problem (BLUF)" rows={2} {...register(`escalations.${i}.problem`)} />
                     <Textarea placeholder="Impact" rows={2} {...register(`escalations.${i}.impact`)} />
                     <Textarea placeholder="Actions taken" rows={2} {...register(`escalations.${i}.actionsTaken`)} />
                     <Input placeholder="Ask (what do you need?)" {...register(`escalations.${i}.ask`)} />
-                    <Input type="url" placeholder="Jira ticket link (optional)" {...register(`escalations.${i}.jiraLink`)} />
+                    <Controller
+                      control={control}
+                      name={`escalations.${i}.jiraLinks`}
+                      render={({ field }) => (
+                        <JiraLinksInput value={field.value ?? []} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm"
-                  onClick={() => escalations.append({ project: "", topic: "", problem: "", impact: "", actionsTaken: "", ask: "", jiraLink: "" })}>
+                <Button type="button" variant="default" size="sm"
+                  onClick={() => escalations.append({ project: "", topic: "", problem: "", impact: "", actionsTaken: "", ask: "", jiraLinks: [] })}>
                   + Add escalation
                 </Button>
               </CardContent>
@@ -182,20 +249,28 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
               <CardContent className="space-y-4">
                 {productionHealth.fields.map((field, i) => (
                   <div key={field.id} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex gap-2">
-                      <Input placeholder="Product · Client" {...register(`productionHealth.${i}.project`)} />
-                      <Input placeholder="Topic" {...register(`productionHealth.${i}.topic`)} />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => productionHealth.remove(i)}>✕</Button>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input className="sm:flex-1" placeholder="Product · Client" {...register(`productionHealth.${i}.project`)} />
+                      <Input className="sm:flex-1" placeholder="Topic" {...register(`productionHealth.${i}.topic`)} />
+                      <Button type="button" variant="destructive" size="sm"
+                        className="self-end sm:self-auto min-h-9"
+                        onClick={() => productionHealth.remove(i)}>✕</Button>
                     </div>
                     <Textarea placeholder="Problem (BLUF)" rows={2} {...register(`productionHealth.${i}.problem`)} />
                     <Textarea placeholder="Impact" rows={2} {...register(`productionHealth.${i}.impact`)} />
                     <Textarea placeholder="Root cause" rows={2} {...register(`productionHealth.${i}.rootCause`)} />
                     <Input placeholder="Next action" {...register(`productionHealth.${i}.nextAction`)} />
-                    <Input type="url" placeholder="Jira ticket link (optional)" {...register(`productionHealth.${i}.jiraLink`)} />
+                    <Controller
+                      control={control}
+                      name={`productionHealth.${i}.jiraLinks`}
+                      render={({ field }) => (
+                        <JiraLinksInput value={field.value ?? []} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm"
-                  onClick={() => productionHealth.append({ project: "", topic: "", problem: "", impact: "", rootCause: "", nextAction: "", jiraLink: "" })}>
+                <Button type="button" variant="default" size="sm"
+                  onClick={() => productionHealth.append({ project: "", topic: "", problem: "", impact: "", rootCause: "", nextAction: "", jiraLinks: [] })}>
                   + Add incident
                 </Button>
               </CardContent>
@@ -210,18 +285,26 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
               <CardContent className="space-y-4">
                 {techDebt.fields.map((field, i) => (
                   <div key={field.id} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex gap-2">
-                      <Input placeholder="Product · Client" {...register(`techDebt.${i}.project`)} />
-                      <Input placeholder="Type (e.g. Debt Incurred)" {...register(`techDebt.${i}.debtType`)} />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => techDebt.remove(i)}>✕</Button>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input className="sm:flex-1" placeholder="Product · Client" {...register(`techDebt.${i}.project`)} />
+                      <Input className="sm:flex-1" placeholder="Type (e.g. Debt Incurred)" {...register(`techDebt.${i}.debtType`)} />
+                      <Button type="button" variant="destructive" size="sm"
+                        className="self-end sm:self-auto min-h-9"
+                        onClick={() => techDebt.remove(i)}>✕</Button>
                     </div>
                     <Textarea placeholder="Description" rows={2} {...register(`techDebt.${i}.description`)} />
                     <Input placeholder="Proposed mitigation" {...register(`techDebt.${i}.mitigation`)} />
-                    <Input type="url" placeholder="Jira ticket link (optional)" {...register(`techDebt.${i}.jiraLink`)} />
+                    <Controller
+                      control={control}
+                      name={`techDebt.${i}.jiraLinks`}
+                      render={({ field }) => (
+                        <JiraLinksInput value={field.value ?? []} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm"
-                  onClick={() => techDebt.append({ project: "", debtType: "", description: "", mitigation: "", jiraLink: "" })}>
+                <Button type="button" variant="default" size="sm"
+                  onClick={() => techDebt.append({ project: "", debtType: "", description: "", mitigation: "", jiraLinks: [] })}>
                   + Add tech debt
                 </Button>
               </CardContent>
@@ -236,14 +319,14 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
               <CardContent className="space-y-4">
                 {delivery.fields.map((field, i) => (
                   <div key={field.id} className="border rounded-lg p-3 space-y-2">
-                    <div className="flex gap-2">
-                      <Input placeholder="Product · Client" {...register(`delivery.${i}.project`)} />
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input className="sm:flex-1" placeholder="Product · Client" {...register(`delivery.${i}.project`)} />
                       <Controller
                         control={control}
                         name={`delivery.${i}.sprintGoalStatus`}
                         render={({ field: f }) => (
                           <Select value={f.value} onValueChange={f.onChange}>
-                            <SelectTrigger className="w-36">
+                            <SelectTrigger className="w-full sm:w-36">
                               <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -254,16 +337,24 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
                           </Select>
                         )}
                       />
-                      <Button type="button" variant="ghost" size="sm" onClick={() => delivery.remove(i)}>✕</Button>
+                      <Button type="button" variant="destructive" size="sm"
+                        className="self-end sm:self-auto min-h-9"
+                        onClick={() => delivery.remove(i)}>✕</Button>
                     </div>
                     <Textarea placeholder="Progress" rows={2} {...register(`delivery.${i}.progress`)} />
                     <Textarea placeholder="Next steps" rows={2} {...register(`delivery.${i}.nextSteps`)} />
                     <Input placeholder="Risks (optional)" {...register(`delivery.${i}.risks`)} />
-                    <Input type="url" placeholder="Jira ticket link (optional)" {...register(`delivery.${i}.jiraLink`)} />
+                    <Controller
+                      control={control}
+                      name={`delivery.${i}.jiraLinks`}
+                      render={({ field }) => (
+                        <JiraLinksInput value={field.value ?? []} onChange={field.onChange} />
+                      )}
+                    />
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm"
-                  onClick={() => delivery.append({ project: "", sprintGoalStatus: "Ongoing", progress: "", nextSteps: "", risks: "", jiraLink: "" })}>
+                <Button type="button" variant="default" size="sm"
+                  onClick={() => delivery.append({ project: "", sprintGoalStatus: "Ongoing", progress: "", nextSteps: "", risks: "", jiraLinks: [] })}>
                   + Add delivery item
                 </Button>
               </CardContent>
@@ -277,12 +368,12 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="space-y-1">
-                  <Label>Priority 1</Label>
-                  <Input {...register("lookAhead.priority1")} />
+                  <Label>Priority 1 <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Textarea rows={2} placeholder="What is the top priority next week?" {...register("lookAhead.priority1")} />
                 </div>
                 <div className="space-y-1">
-                  <Label>Priority 2</Label>
-                  <Input {...register("lookAhead.priority2")} />
+                  <Label>Priority 2 <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Textarea rows={2} placeholder="What is the second priority next week?" {...register("lookAhead.priority2")} />
                 </div>
               </CardContent>
             </Card>
@@ -302,22 +393,23 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
               </CardContent>
             </Card>
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={submitting} size="lg">
-                {submitting ? "Submitting…" : "Submit Report"}
-              </Button>
-            </div>
+            {submitError && (
+              <p className="text-sm text-destructive">{submitError}</p>
+            )}
+            <Button type="submit" disabled={submitting} size="lg" className="w-full sm:w-auto">
+              {submitting ? "Submitting…" : "Submit Report"}
+            </Button>
           </form>
         </TabsContent>
 
         <TabsContent value="preview">
           <Card>
-            <CardContent className="p-6 prose prose-sm max-w-none">
+            <CardContent className="p-4 sm:p-6 prose prose-sm max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{preview}</ReactMarkdown>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageShell>
   );
 }

@@ -6,7 +6,9 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
+import { FileText } from "lucide-react";
 import { HEALTH_LABELS } from "@/types/report";
 import type { MemberRecap } from "./page";
 
@@ -78,16 +80,16 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <label htmlFor="week-select" className="text-sm font-medium">
+          <label htmlFor="week-select" className="text-sm font-medium shrink-0">
             Week
           </label>
           <select
             id="week-select"
             value={weekId}
             onChange={(e) => router.push(`?week=${e.target.value}`)}
-            className="border rounded px-2 py-1 text-sm bg-background"
+            className="border rounded px-2 py-1.5 text-sm bg-background flex-1 sm:flex-none"
           >
             {weeks.map((w) => (
               <option key={w} value={w}>{w}</option>
@@ -98,6 +100,7 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
           onClick={handleGenerateSummary}
           disabled={generating || present.length === 0}
           size="sm"
+          className="w-full sm:w-auto min-h-11 sm:min-h-0"
         >
           {generating ? "Generating…" : "Generate AI Summary"}
         </Button>
@@ -121,10 +124,24 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
         </Card>
       )}
 
+      {/* Generating skeleton */}
+      {generating && (
+        <Card>
+          <CardContent className="p-6 space-y-3">
+            <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-full bg-muted rounded animate-pulse" />
+            <div className="h-3 w-5/6 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-4/6 bg-muted rounded animate-pulse" />
+          </CardContent>
+        </Card>
+      )}
+
       {present.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No submitted reports found for {weekId}.
-        </p>
+        <EmptyState
+          icon={<FileText className="h-5 w-5" />}
+          title="No reports for this week"
+          description={`No submitted reports found for ${weekId}. Try selecting a different week.`}
+        />
       ) : (
         <>
           {/* Team Summaries */}
@@ -148,8 +165,8 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
 
                   return (
                     <div key={m.userId} className="py-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Link
                             href={reportHref(m.userId, weekId)}
                             className="text-sm font-semibold hover:underline"
@@ -162,7 +179,7 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
                         </div>
                         <Link
                           href={reportHref(m.userId, weekId)}
-                          className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                          className="text-xs text-muted-foreground hover:text-foreground hover:underline self-start sm:self-auto"
                         >
                           View Report →
                         </Link>
@@ -227,16 +244,10 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
                       <p><span className="font-medium">Problem:</span> {e.problem}</p>
                       <p><span className="font-medium">Impact:</span> {e.impact}</p>
                       <p><span className="font-medium">Ask:</span> {e.ask}</p>
-                      {e.jiraLink && (
-                        <a
-                          href={e.jiraLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline break-all"
-                        >
-                          {e.jiraLink}
-                        </a>
-                      )}
+                      {(e.jiraLinks ?? []).filter(Boolean).map((link, li) => (
+                        <a key={li} href={link} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline break-all block">{link}</a>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -268,16 +279,10 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
                       <p><span className="font-medium">Problem:</span> {inc.problem}</p>
                       <p><span className="font-medium">Root cause:</span> {inc.rootCause}</p>
                       <p><span className="font-medium">Next action:</span> {inc.nextAction}</p>
-                      {inc.jiraLink && (
-                        <a
-                          href={inc.jiraLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline break-all"
-                        >
-                          {inc.jiraLink}
-                        </a>
-                      )}
+                      {(inc.jiraLinks ?? []).filter(Boolean).map((link, li) => (
+                        <a key={li} href={link} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline break-all block">{link}</a>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -358,14 +363,14 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
       )}
 
       {/* AI Summary */}
-      {summary && (
+      {!generating && summary && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">AI Executive Summary</CardTitle>
               <Button
                 size="sm"
-                variant="ghost"
+                variant="secondary"
                 onClick={() => {
                   navigator.clipboard.writeText(summary);
                   toast.success("Copied to clipboard");

@@ -13,7 +13,7 @@ export interface EscalationItem {
   impact: string;
   actionsTaken: string;
   ask: string;
-  jiraLink?: string;
+  jiraLinks?: string[];
 }
 
 export interface ProductionHealthItem {
@@ -23,7 +23,7 @@ export interface ProductionHealthItem {
   impact: string;
   rootCause: string;
   nextAction: string;
-  jiraLink?: string;
+  jiraLinks?: string[];
 }
 
 export interface TechDebtItem {
@@ -31,7 +31,7 @@ export interface TechDebtItem {
   debtType: string;
   description: string;
   mitigation: string;
-  jiraLink?: string;
+  jiraLinks?: string[];
 }
 
 export type SprintGoalStatus = "Achieved" | "Ongoing" | "Missed";
@@ -42,7 +42,7 @@ export interface DeliveryItem {
   progress: string;
   nextSteps: string;
   risks: string;
-  jiraLink?: string;
+  jiraLinks?: string[];
 }
 
 export interface LookAhead {

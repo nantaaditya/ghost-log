@@ -20,7 +20,7 @@ export function serializeReport(data: ReportData): string {
     const items = data.escalations
       .map((e) => {
         let item = `- **${e.project} — ${e.topic}** *(Escalation)*\n\t- **Problem:** ${e.problem}\n\t- **Impact:** ${e.impact}\n\t- **Actions taken:** ${e.actionsTaken}\n\t- **Ask:** ${e.ask}`;
-        if (e.jiraLink) item += `\n\t- **Jira:** ${e.jiraLink}`;
+        (e.jiraLinks ?? []).filter(Boolean).forEach((l) => { item += `\n\t- **Jira:** ${l}`; });
         return item;
       })
       .join("\n\n");
@@ -34,7 +34,7 @@ export function serializeReport(data: ReportData): string {
     const items = data.productionHealth
       .map((p) => {
         let item = `- **${p.project} — ${p.topic}** *(Report Problem)*\n\t- **Problem:** ${p.problem}\n\t- **Impact:** ${p.impact}\n\t- **Root cause:** ${p.rootCause}\n\t- **Next action:** ${p.nextAction}`;
-        if (p.jiraLink) item += `\n\t- **Jira:** ${p.jiraLink}`;
+        (p.jiraLinks ?? []).filter(Boolean).forEach((l) => { item += `\n\t- **Jira:** ${l}`; });
         return item;
       })
       .join("\n\n");
@@ -48,7 +48,7 @@ export function serializeReport(data: ReportData): string {
     const items = data.techDebt
       .map((t) => {
         let item = `- **${t.project} — ${t.debtType}:** ${t.description}\n\t- **Proposed Mitigation:** ${t.mitigation}`;
-        if (t.jiraLink) item += `\n\t- **Jira:** ${t.jiraLink}`;
+        (t.jiraLinks ?? []).filter(Boolean).forEach((l) => { item += `\n\t- **Jira:** ${l}`; });
         return item;
       })
       .join("\n\n");
@@ -63,7 +63,7 @@ export function serializeReport(data: ReportData): string {
       .map((d) => {
         let item = `- **${d.project}** *(Update)* — Sprint goal **${d.sprintGoalStatus}**.\n\t- **Progress:** ${d.progress}\n\t- **Next steps:** ${d.nextSteps}`;
         if (d.risks) item += `\n\t- **Risks:** ${d.risks}`;
-        if (d.jiraLink) item += `\n\t- **Jira:** ${d.jiraLink}`;
+        (d.jiraLinks ?? []).filter(Boolean).forEach((l) => { item += `\n\t- **Jira:** ${l}`; });
         return item;
       })
       .join("\n\n");

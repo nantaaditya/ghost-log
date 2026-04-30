@@ -8,6 +8,8 @@ import { readFile } from "@/lib/graph/files";
 import { buildReportPath } from "@/lib/graph/paths";
 import { parseReport } from "@/lib/markdown/parse";
 import { LinkButton } from "@/components/ui/link-button";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import RecapClient from "./RecapClient";
 import type { ReportData } from "@/types/report";
 
@@ -57,20 +59,18 @@ export default async function RecapPage({ searchParams }: Props) {
   if (!weeks.includes(weekId)) weeks.unshift(weekId);
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Weekly Recap</h1>
-          <p className="text-sm text-muted-foreground">{weekId}</p>
-        </div>
-        <LinkButton href="/admin" variant="ghost" size="sm">← Admin</LinkButton>
-      </div>
+    <PageShell maxWidth="4xl">
+      <PageHeader
+        title="Weekly Recap"
+        subtitle={weekId}
+        actions={<LinkButton href="/admin" variant="ghost" size="sm">← Admin</LinkButton>}
+      />
 
       <RecapClient
         weekId={weekId}
         weeks={weeks}
         memberRecaps={memberRecaps}
       />
-    </div>
+    </PageShell>
   );
 }

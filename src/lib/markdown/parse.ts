@@ -57,10 +57,11 @@ function parseEscalations(content: string): EscalationItem[] {
   const items: EscalationItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?) — ([^\n]+?)\*\* \*\(Escalation\)\*\n\t- \*\*Problem:\*\* ([^\n]+)\n\t- \*\*Impact:\*\* ([^\n]+)\n\t- \*\*Actions taken:\*\* ([^\n]+)\n\t- \*\*Ask:\*\* ([^\n]+)(?:\n\t- \*\*Jira:\*\* ([^\n]+))?/g;
+    /- \*\*([^\n]+?) — ([^\n]+?)\*\* \*\(Escalation\)\*\n\t- \*\*Problem:\*\* ([^\n]+)\n\t- \*\*Impact:\*\* ([^\n]+)\n\t- \*\*Actions taken:\*\* ([^\n]+)\n\t- \*\*Ask:\*\* ([^\n]+)((?:\n\t- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
+    const jiraLinks = [...(match[7] ?? "").matchAll(/\*\*Jira:\*\* ([^\n]+)/g)].map((m) => m[1].trim());
     items.push({
       project: match[1].trim(),
       topic: match[2].trim(),
@@ -68,7 +69,7 @@ function parseEscalations(content: string): EscalationItem[] {
       impact: match[4].trim(),
       actionsTaken: match[5].trim(),
       ask: match[6].trim(),
-      ...(match[7] ? { jiraLink: match[7].trim() } : {}),
+      jiraLinks,
     });
   }
   return items;
@@ -79,10 +80,11 @@ function parseProductionHealth(content: string): ProductionHealthItem[] {
   const items: ProductionHealthItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?) — ([^\n]+?)\*\* \*\(Report Problem\)\*\n\t- \*\*Problem:\*\* ([^\n]+)\n\t- \*\*Impact:\*\* ([^\n]+)\n\t- \*\*Root cause:\*\* ([^\n]+)\n\t- \*\*Next action:\*\* ([^\n]+)(?:\n\t- \*\*Jira:\*\* ([^\n]+))?/g;
+    /- \*\*([^\n]+?) — ([^\n]+?)\*\* \*\(Report Problem\)\*\n\t- \*\*Problem:\*\* ([^\n]+)\n\t- \*\*Impact:\*\* ([^\n]+)\n\t- \*\*Root cause:\*\* ([^\n]+)\n\t- \*\*Next action:\*\* ([^\n]+)((?:\n\t- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
+    const jiraLinks = [...(match[7] ?? "").matchAll(/\*\*Jira:\*\* ([^\n]+)/g)].map((m) => m[1].trim());
     items.push({
       project: match[1].trim(),
       topic: match[2].trim(),
@@ -90,7 +92,7 @@ function parseProductionHealth(content: string): ProductionHealthItem[] {
       impact: match[4].trim(),
       rootCause: match[5].trim(),
       nextAction: match[6].trim(),
-      ...(match[7] ? { jiraLink: match[7].trim() } : {}),
+      jiraLinks,
     });
   }
   return items;
@@ -101,16 +103,17 @@ function parseTechDebt(content: string): TechDebtItem[] {
   const items: TechDebtItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?) — ([^\n]+?):\*\* ([^\n]+)\n\t- \*\*Proposed Mitigation:\*\* ([^\n]+)(?:\n\t- \*\*Jira:\*\* ([^\n]+))?/g;
+    /- \*\*([^\n]+?) — ([^\n]+?):\*\* ([^\n]+)\n\t- \*\*Proposed Mitigation:\*\* ([^\n]+)((?:\n\t- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
+    const jiraLinks = [...(match[5] ?? "").matchAll(/\*\*Jira:\*\* ([^\n]+)/g)].map((m) => m[1].trim());
     items.push({
       project: match[1].trim(),
       debtType: match[2].trim(),
       description: match[3].trim(),
       mitigation: match[4].trim(),
-      ...(match[5] ? { jiraLink: match[5].trim() } : {}),
+      jiraLinks,
     });
   }
   return items;
@@ -121,17 +124,18 @@ function parseDelivery(content: string): DeliveryItem[] {
   const items: DeliveryItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?)\*\* \*\(Update\)\* — Sprint goal \*\*([^\n]+?)\*\*\.\n\t- \*\*Progress:\*\* ([^\n]+)\n\t- \*\*Next steps:\*\* ([^\n]+)(?:\n\t- \*\*Risks:\*\* ([^\n]+))?(?:\n\t- \*\*Jira:\*\* ([^\n]+))?/g;
+    /- \*\*([^\n]+?)\*\* \*\(Update\)\* — Sprint goal \*\*([^\n]+?)\*\*\.\n\t- \*\*Progress:\*\* ([^\n]+)\n\t- \*\*Next steps:\*\* ([^\n]+)(?:\n\t- \*\*Risks:\*\* ([^\n]+))?((?:\n\t- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
+    const jiraLinks = [...(match[6] ?? "").matchAll(/\*\*Jira:\*\* ([^\n]+)/g)].map((m) => m[1].trim());
     items.push({
       project: match[1].trim(),
       sprintGoalStatus: match[2].trim() as SprintGoalStatus,
       progress: match[3].trim(),
       nextSteps: match[4].trim(),
       risks: match[5]?.trim() ?? "",
-      ...(match[6] ? { jiraLink: match[6].trim() } : {}),
+      jiraLinks,
     });
   }
   return items;

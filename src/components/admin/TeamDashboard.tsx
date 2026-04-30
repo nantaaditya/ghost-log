@@ -8,6 +8,7 @@ import { parseReport } from "@/lib/markdown/parse";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
+import { PageShell } from "@/components/layout/PageShell";
 import { HEALTH_LABELS } from "@/types/report";
 import type { ReportData } from "@/types/report";
 
@@ -63,7 +64,7 @@ export default async function TeamDashboard() {
   const submissionRate = total > 0 ? Math.round((submitted.length / total) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 pt-6 space-y-4">
+    <PageShell maxWidth="4xl" className="pb-0 sm:pb-0">
       {/* Submission + health overview */}
       <Card>
         <CardHeader className="pb-2">
@@ -81,7 +82,7 @@ export default async function TeamDashboard() {
             </span>
             <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full"
+                className={`h-full rounded-full ${submissionRate >= 80 ? "bg-green-500" : submissionRate >= 50 ? "bg-amber-500" : "bg-red-500"}`}
                 style={{ width: `${submissionRate}%` }}
               />
             </div>
@@ -96,7 +97,7 @@ export default async function TeamDashboard() {
                 { key: "off-track", cls: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40", numCls: "text-red-700 dark:text-red-400" },
               ] as const
             ).map(({ key, cls, numCls }) => (
-              <div key={key} className={`border rounded-lg p-3 text-center ${cls}`}>
+              <div key={key} className={`border rounded-lg p-2 sm:p-3 text-center ${cls}`}>
                 <p className={`text-2xl font-bold ${numCls}`}>{healthCounts[key]}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{HEALTH_LABELS[key]}</p>
               </div>
@@ -128,16 +129,10 @@ export default async function TeamDashboard() {
                   </div>
                   <p className="text-muted-foreground">{e.topic}</p>
                   <p><span className="font-medium">Ask:</span> {e.ask}</p>
-                  {e.jiraLink && (
-                    <a
-                      href={e.jiraLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline break-all"
-                    >
-                      {e.jiraLink}
-                    </a>
-                  )}
+                  {(e.jiraLinks ?? []).filter(Boolean).map((link, li) => (
+                    <a key={li} href={link} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline break-all block">{link}</a>
+                  ))}
                 </div>
               ))}
             </div>
@@ -162,6 +157,6 @@ export default async function TeamDashboard() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageShell>
   );
 }
