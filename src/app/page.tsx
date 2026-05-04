@@ -1,8 +1,10 @@
 import { auth } from "@/lib/auth/config";
 import { db } from "@/lib/db/client";
 import { reports } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, ne, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
@@ -11,7 +13,7 @@ import SignOutButton from "@/components/SignOutButton";
 import CommunicationGuide from "@/components/dashboard/CommunicationGuide";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ShieldCheck, Plus, Clock, PenLine, CircleCheck } from "lucide-react";
+import { ShieldCheck, Plus, Clock, PenLine, CircleCheck, Users } from "lucide-react";
 
 function initials(name: string) {
   return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
@@ -25,15 +27,28 @@ export default async function DashboardPage() {
   const currentWeekId = getCurrentWeekId();
   const userName = session.user.name ?? "User";
 
-  const userReports = await db
-    .select()
-    .from(reports)
-    .where(eq(reports.userId, session.user.id))
-    .orderBy(desc(reports.updatedAt))
-    .limit(20);
+  const [userReports, teamPastRaw] = await Promise.all([
+    db
+      .select()
+      .from(reports)
+      .where(eq(reports.userId, session.user.id))
+      .orderBy(desc(reports.updatedAt))
+      .limit(20),
+    db
+      .select({ weekId: reports.weekId })
+      .from(reports)
+      .where(and(eq(reports.status, "submitted"), ne(reports.weekId, currentWeekId)))
+      .orderBy(desc(reports.submittedAt)),
+  ]);
 
   const currentWeekReport = userReports.find((r) => r.weekId === currentWeekId);
   const pastReports = userReports.filter((r) => r.weekId !== currentWeekId);
+
+  const weekCountMap = new Map<string, number>();
+  for (const r of teamPastRaw) {
+    weekCountMap.set(r.weekId, (weekCountMap.get(r.weekId) ?? 0) + 1);
+  }
+  const teamPastWeeks = Array.from(weekCountMap.entries()).map(([weekId, count]) => ({ weekId, count }));
 
   return (
     <PageShell>
@@ -152,6 +167,34 @@ export default async function DashboardPage() {
                       className="min-h-11 sm:min-h-0">Continue</LinkButton>
                   )}
                 </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Team Past Weeks */}
+      {teamPastWeeks.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Team Past Weeks</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="divide-y">
+            {teamPastWeeks.map(({ weekId, count }) => (
+              <div key={weekId} className="py-3 flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm">{weekId}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {count} member{count !== 1 ? "s" : ""} submitted
+                  </p>
+                </div>
+                <LinkButton href={`/team/${weekId}`} variant="outline" size="sm"
+                  className="min-h-11 sm:min-h-0">
+                  View Team
+                </LinkButton>
               </div>
             ))}
           </CardContent>
