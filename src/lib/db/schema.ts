@@ -52,6 +52,15 @@ export const reports = pgTable("reports", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type InviteToken = typeof inviteTokens.$inferSelect;
@@ -59,3 +68,4 @@ export type NewInviteToken = typeof inviteTokens.$inferInsert;
 export type OnedriveCredentials = typeof onedriveCredentials.$inferSelect;
 export type Report = typeof reports.$inferSelect;
 export type NewReport = typeof reports.$inferInsert;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

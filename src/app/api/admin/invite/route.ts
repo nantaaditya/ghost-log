@@ -4,7 +4,7 @@ import { users, inviteTokens } from "@/lib/db/schema";
 import { sendInviteEmail } from "@/lib/email/send-invite";
 import { env } from "@/lib/env";
 import { eq } from "drizzle-orm";
-import { randomBytes, createHash } from "crypto";
+import { generateToken, hashToken, INVITE_TOKEN_EXPIRES_MS } from "@/lib/auth/tokens";
 import { z } from "zod";
 
 const inviteSchema = z.object({
@@ -36,9 +36,9 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ success: false, error: "User already exists" }, { status: 409 });
   }
 
-  const token = randomBytes(32).toString("hex");
-  const tokenHash = createHash("sha256").update(token).digest("hex");
-  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+  const token = generateToken();
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + INVITE_TOKEN_EXPIRES_MS);
 
   const [adminUser] = await db
     .select()

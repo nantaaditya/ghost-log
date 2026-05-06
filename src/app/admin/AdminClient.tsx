@@ -39,6 +39,7 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
   const [inviteName, setInviteName] = useState("");
   const [inviting, setInviting] = useState(false);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+  const [resendingIds, setResendingIds] = useState<Set<string>>(new Set());
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -61,6 +62,40 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
       toast.error("Network error — please try again");
     } finally {
       setInviting(false);
+    }
+  }
+
+  async function resendInvite(userId: string) {
+    setResendingIds((prev) => new Set(prev).add(userId));
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/resend-invite`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Invite resent");
+      } else {
+        toast.error(json.error ?? "Failed to resend invite");
+      }
+    } catch {
+      toast.error("Network error — please try again");
+    } finally {
+      setResendingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; });
+    }
+  }
+
+  async function resendReset(userId: string) {
+    setResendingIds((prev) => new Set(prev).add(userId));
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/resend-reset`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Password reset email sent");
+      } else {
+        toast.error(json.error ?? "Failed to send reset email");
+      }
+    } catch {
+      toast.error("Network error — please try again");
+    } finally {
+      setResendingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; });
     }
   }
 
@@ -246,6 +281,28 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
                 }>
                   {user.status}
                 </Badge>
+                {user.role !== "admin" && user.status === "pending" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={resendingIds.has(user.id)}
+                    className="min-h-11 sm:min-h-0"
+                    onClick={() => resendInvite(user.id)}
+                  >
+                    {resendingIds.has(user.id) ? "Sending…" : "Resend invite"}
+                  </Button>
+                )}
+                {user.role !== "admin" && user.status === "active" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={resendingIds.has(user.id)}
+                    className="min-h-11 sm:min-h-0"
+                    onClick={() => resendReset(user.id)}
+                  >
+                    {resendingIds.has(user.id) ? "Sending…" : "Send password reset"}
+                  </Button>
+                )}
                 {user.role !== "admin" && user.status !== "pending" && (
                   <Button
                     size="sm"

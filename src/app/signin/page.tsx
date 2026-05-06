@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,9 @@ import { FileText } from "lucide-react";
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justReset = searchParams.get("reset") === "1";
+  const justInvited = searchParams.get("invited") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -50,6 +54,17 @@ export default function SignInPage() {
           </div>
         </div>
 
+        {justInvited && (
+          <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-4 py-3 text-sm text-green-700 dark:text-green-400 text-center">
+            Account activated! Sign in with your new password.
+          </div>
+        )}
+        {justReset && (
+          <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-4 py-3 text-sm text-green-700 dark:text-green-400 text-center">
+            Password reset successfully. Sign in with your new password.
+          </div>
+        )}
+
         <Card className="shadow-md border-border/60">
           <CardContent className="pt-6 pb-6 space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -66,7 +81,12 @@ export default function SignInPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground">
+                    Forgot password?
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
