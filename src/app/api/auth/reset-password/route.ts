@@ -49,13 +49,11 @@ export async function POST(req: Request): Promise<Response> {
 
   const passwordHash = await hash(password, 12);
 
-  await db.transaction(async (tx) => {
-    await tx.update(users).set({ passwordHash }).where(eq(users.id, user.id));
-    await tx
-      .update(passwordResetTokens)
-      .set({ usedAt: now })
-      .where(eq(passwordResetTokens.id, resetToken.id));
-  });
+  await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
+  await db
+    .update(passwordResetTokens)
+    .set({ usedAt: now })
+    .where(eq(passwordResetTokens.id, resetToken.id));
 
   return Response.json({ success: true });
 }
