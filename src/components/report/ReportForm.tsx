@@ -123,12 +123,13 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
   }, [currentWeekId, initial, reset]);
 
   useEffect(() => {
+    if (initial) return;
     const timer = setTimeout(() => {
       localStorage.setItem(`${DRAFT_KEY}-${currentWeekId}`, JSON.stringify(formData));
       setLastSaved(new Date());
     }, 2000);
     return () => clearTimeout(timer);
-  }, [formData, currentWeekId]);
+  }, [formData, currentWeekId, initial]);
 
   async function submit(data: ReportData) {
     setSubmitting(true);
