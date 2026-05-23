@@ -16,7 +16,8 @@ const HEALTH_MAP: Record<string, HealthIndicator> = {
 };
 
 export function parseReport(markdown: string): ReportData | null {
-  const { content } = matter(markdown);
+  const normalized = markdown.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const { content } = matter(normalized);
 
   const reporterMatch = content.match(/\*\*Reporter\*\*:\s*(.+)/);
   const dateMatch = content.match(/\*\*Date:\*\*\s*`([^`]+)`/);
@@ -56,7 +57,7 @@ function parseEscalations(content: string): EscalationItem[] {
   const items: EscalationItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?) — ([^\n]+?)\*\* \*\(Escalation\)\*\n[ \t]+- \*\*Problem:\*\* ?([^\n]*)\n[ \t]+- \*\*Impact:\*\* ?([^\n]*)\n[ \t]+- \*\*Actions taken:\*\* ?([^\n]*)\n[ \t]+- \*\*Ask:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?) — ([^\n]*?)\*\* \*\(Escalation\)\*\n[ \t]+- \*\*Problem:\*\* ?([^\n]*)\n[ \t]+- \*\*Impact:\*\* ?([^\n]*)\n[ \t]+- \*\*Actions taken:\*\* ?([^\n]*)\n[ \t]+- \*\*Ask:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
@@ -79,7 +80,7 @@ function parseProductionHealth(content: string): ProductionHealthItem[] {
   const items: ProductionHealthItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?) — ([^\n]+?)\*\* \*\(Report Problem\)\*\n[ \t]+- \*\*Problem:\*\* ?([^\n]*)\n[ \t]+- \*\*Impact:\*\* ?([^\n]*)\n[ \t]+- \*\*Root cause:\*\* ?([^\n]*)\n[ \t]+- \*\*Next action:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?) — ([^\n]*?)\*\* \*\(Report Problem\)\*\n[ \t]+- \*\*Problem:\*\* ?([^\n]*)\n[ \t]+- \*\*Impact:\*\* ?([^\n]*)\n[ \t]+- \*\*Root cause:\*\* ?([^\n]*)\n[ \t]+- \*\*Next action:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
@@ -102,7 +103,7 @@ function parseTechDebt(content: string): TechDebtItem[] {
   const items: TechDebtItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?) — ([^\n]+?):\*\* ?([^\n]*)\n[ \t]+- \*\*Proposed Mitigation:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?) — ([^\n]*?):\*\* ?([^\n]*)\n[ \t]+- \*\*Proposed Mitigation:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
@@ -123,7 +124,7 @@ function parseDelivery(content: string): DeliveryItem[] {
   const items: DeliveryItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]+?)\*\* \*\(Update\)\* — Sprint goal \*\*([^\n]+?)\*\*\.\n[ \t]+- \*\*Progress:\*\* ?([^\n]*)\n[ \t]+- \*\*Next steps:\*\* ?([^\n]*)(?:\n[ \t]+- \*\*Risks:\*\* ?([^\n]*))?((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?)\*\* \*\(Update\)\* — Sprint goal \*\*([^\n]*?)\*\*\.\n[ \t]+- \*\*Progress:\*\* ?([^\n]*)\n[ \t]+- \*\*Next steps:\*\* ?([^\n]*)(?:\n[ \t]+- \*\*Risks:\*\* ?([^\n]*))?((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {

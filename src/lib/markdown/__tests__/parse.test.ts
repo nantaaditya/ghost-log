@@ -148,4 +148,41 @@ describe("parseReport", () => {
     expect(result?.delivery[0].project).toBe("CMS");
     expect(result?.delivery[0].progress).toBe("");
   });
+
+  it("round-trips productionHealth item with empty topic", () => {
+    const data: ReportData = {
+      ...base,
+      productionHealth: [{ project: "Test", topic: "", problem: "", impact: "", rootCause: "", nextAction: "", jiraLinks: [] }],
+    };
+    const md = serializeReport(data);
+    const result = parseReport(md);
+    expect(result?.productionHealth).toHaveLength(1);
+    expect(result?.productionHealth[0].project).toBe("Test");
+    expect(result?.productionHealth[0].topic).toBe("");
+  });
+
+  it("round-trips techDebt item with empty debtType", () => {
+    const data: ReportData = {
+      ...base,
+      techDebt: [{ project: "Test", debtType: "", description: "", mitigation: "", jiraLinks: [] }],
+    };
+    const md = serializeReport(data);
+    const result = parseReport(md);
+    expect(result?.techDebt).toHaveLength(1);
+    expect(result?.techDebt[0].project).toBe("Test");
+    expect(result?.techDebt[0].debtType).toBe("");
+  });
+
+  it("parses CRLF line endings (Windows/OneDrive sync) correctly for all sections", () => {
+    const md = serializeReport(full);
+    const crlf = md.replace(/\n/g, "\r\n");
+    const result = parseReport(crlf);
+    expect(result).not.toBeNull();
+    expect(result?.escalations).toHaveLength(1);
+    expect(result?.productionHealth).toHaveLength(1);
+    expect(result?.techDebt).toHaveLength(1);
+    expect(result?.delivery).toHaveLength(1);
+    expect(result?.lookAhead.priority1).toBe("Finish auth migration");
+    expect(result?.ghibah).toBe("This week was intense but rewarding.");
+  });
 });
