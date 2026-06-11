@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth/config";
 import { db } from "@/lib/db/client";
 import { users, onedriveCredentials, reports } from "@/lib/db/schema";
 import { redirect } from "next/navigation";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, gte } from "drizzle-orm";
 import AdminClient from "./AdminClient";
 import TeamDashboard from "@/components/admin/TeamDashboard";
 
@@ -19,7 +19,10 @@ export default async function AdminPage({
 
   const { onedrive } = await searchParams;
 
-  const [allUsers, allReports, creds] = await Promise.all([
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  const [allUsers, recentReports, creds] = await Promise.all([
     db.select().from(users).orderBy(users.createdAt),
     db
       .select({
@@ -27,13 +30,15 @@ export default async function AdminPage({
         weekId: reports.weekId,
         status: reports.status,
         submittedAt: reports.submittedAt,
+        updatedAt: reports.updatedAt,
         userId: reports.userId,
         userName: users.name,
         userEmail: users.email,
       })
       .from(reports)
       .innerJoin(users, eq(reports.userId, users.id))
-      .orderBy(desc(reports.submittedAt)),
+      .where(gte(reports.updatedAt, oneMonthAgo))
+      .orderBy(desc(reports.updatedAt)),
     db
       .select({ id: onedriveCredentials.id, expiresAt: onedriveCredentials.expiresAt })
       .from(onedriveCredentials)
@@ -57,7 +62,7 @@ export default async function AdminPage({
       </Suspense>
       <AdminClient
         users={allUsers}
-        allReports={allReports}
+        recentReports={recentReports}
         onedriveConnected={onedriveConnected}
         onedriveStatus={onedrive}
       />

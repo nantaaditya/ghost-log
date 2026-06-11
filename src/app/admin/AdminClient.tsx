@@ -9,11 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LinkButton } from "@/components/ui/link-button";
 import { buttonVariants } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { toast } from "sonner";
-import { FileText } from "lucide-react";
 import type { User } from "@/lib/db/schema";
 
 type ReportRow = {
@@ -21,6 +19,7 @@ type ReportRow = {
   weekId: string;
   status: string;
   submittedAt: Date | null;
+  updatedAt: Date;
   userId: string;
   userName: string;
   userEmail: string;
@@ -28,18 +27,24 @@ type ReportRow = {
 
 type Props = {
   users: User[];
-  allReports: ReportRow[];
+  recentReports: ReportRow[];
   onedriveConnected: boolean;
   onedriveStatus?: string;
 };
 
-export default function AdminClient({ users: initialUsers, allReports, onedriveConnected, onedriveStatus }: Props) {
+export default function AdminClient({ users: initialUsers, recentReports, onedriveConnected, onedriveStatus }: Props) {
   const [users, setUsers] = useState(initialUsers);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviting, setInviting] = useState(false);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const [resendingIds, setResendingIds] = useState<Set<string>>(new Set());
+
+  const reportsByUser = recentReports.reduce<Record<string, ReportRow[]>>((acc, r) => {
+    if (!acc[r.userId]) acc[r.userId] = [];
+    acc[r.userId].push(r);
+    return acc;
+  }, {});
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -215,110 +220,115 @@ export default function AdminClient({ users: initialUsers, allReports, onedriveC
         </CardContent>
       </Card>
 
-      {/* All Reports */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">All Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {allReports.length === 0 ? (
-            <EmptyState
-              icon={<FileText className="h-5 w-5" />}
-              title="No reports yet"
-              description="Once team members submit their weekly reports, they'll appear here."
-            />
-          ) : (
-            <div className="divide-y">
-              {allReports.map((report) => (
-                <div key={report.id} className={`py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-l-2 pl-3 -ml-px ${report.status === "draft" ? "border-amber-400" : "border-transparent"}`}>
-                  <div>
-                    <p className="font-medium text-sm">{report.userName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {report.weekId} ·{" "}
-                      {report.submittedAt
-                        ? new Date(report.submittedAt).toLocaleDateString()
-                        : "not submitted"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={report.status === "submitted" ? "default" : "secondary"}>
-                      {report.status}
-                    </Badge>
-                    {report.status === "submitted" && (
-                      <LinkButton
-                        href={`/admin/reports/${report.userId}/${report.weekId}`}
-                        variant="outline"
-                        size="sm"
-                        className="min-h-11 sm:min-h-0"
-                      >
-                        View
-                      </LinkButton>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Users List */}
+      {/* Team Members + Reports (merged) */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Team Members</CardTitle>
         </CardHeader>
         <CardContent className="divide-y">
-          {users.map((user) => (
-            <div key={user.id} className="py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-medium text-sm">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+          {users.map((user) => {
+            const memberReports = reportsByUser[user.id] ?? [];
+            return (
+              <div key={user.id} className="py-4 space-y-3">
+                {/* Member header: name, status, actions */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant={
+                      user.status === "active" ? "default" :
+                      user.status === "pending" ? "secondary" : "outline"
+                    }>
+                      {user.status}
+                    </Badge>
+                    {user.role !== "admin" && user.status === "pending" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={resendingIds.has(user.id)}
+                        className="min-h-11 sm:min-h-0"
+                        onClick={() => resendInvite(user.id)}
+                      >
+                        {resendingIds.has(user.id) ? "Sending…" : "Resend invite"}
+                      </Button>
+                    )}
+                    {user.role !== "admin" && user.status === "active" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={resendingIds.has(user.id)}
+                        className="min-h-11 sm:min-h-0"
+                        onClick={() => resendReset(user.id)}
+                      >
+                        {resendingIds.has(user.id) ? "Sending…" : "Send password reset"}
+                      </Button>
+                    )}
+                    {user.role !== "admin" && user.status !== "pending" && (
+                      <Button
+                        size="sm"
+                        variant={user.status === "active" ? "destructive" : "outline"}
+                        disabled={togglingIds.has(user.id)}
+                        className="min-h-11 sm:min-h-0"
+                        onClick={() => toggleStatus(user.id, user.status)}
+                      >
+                        {togglingIds.has(user.id)
+                          ? "Updating…"
+                          : user.status === "active" ? "Deactivate" : "Activate"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Recent reports (last 1 month) */}
+                <div className="pl-3 border-l-2 border-muted space-y-1.5">
+                  {memberReports.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No reports this month.</p>
+                  ) : (
+                    memberReports.map((report) => (
+                      <div
+                        key={report.id}
+                        className={`flex items-center justify-between gap-2 rounded px-2 py-1.5 ${report.status === "draft" ? "border-l-2 border-amber-400 pl-2 -ml-2" : ""}`}
+                      >
+                        <div>
+                          <span className="text-xs font-medium">{report.weekId}</span>
+                          {report.submittedAt && (
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {new Date(report.submittedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={report.status === "submitted" ? "default" : "secondary"} className="text-xs">
+                            {report.status}
+                          </Badge>
+                          {report.status === "submitted" && (
+                            <LinkButton
+                              href={`/admin/reports/${report.userId}/${report.weekId}`}
+                              variant="outline"
+                              size="sm"
+                              className="min-h-0 h-6 text-xs px-2"
+                            >
+                              View
+                            </LinkButton>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <LinkButton
+                    href={`/admin/members/${user.id}`}
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-0 h-6 text-xs px-0 text-muted-foreground hover:text-foreground"
+                  >
+                    View full history →
+                  </LinkButton>
+                </div>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant={
-                  user.status === "active" ? "default" :
-                  user.status === "pending" ? "secondary" : "outline"
-                }>
-                  {user.status}
-                </Badge>
-                {user.role !== "admin" && user.status === "pending" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={resendingIds.has(user.id)}
-                    className="min-h-11 sm:min-h-0"
-                    onClick={() => resendInvite(user.id)}
-                  >
-                    {resendingIds.has(user.id) ? "Sending…" : "Resend invite"}
-                  </Button>
-                )}
-                {user.role !== "admin" && user.status === "active" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={resendingIds.has(user.id)}
-                    className="min-h-11 sm:min-h-0"
-                    onClick={() => resendReset(user.id)}
-                  >
-                    {resendingIds.has(user.id) ? "Sending…" : "Send password reset"}
-                  </Button>
-                )}
-                {user.role !== "admin" && user.status !== "pending" && (
-                  <Button
-                    size="sm"
-                    variant={user.status === "active" ? "destructive" : "outline"}
-                    disabled={togglingIds.has(user.id)}
-                    className="min-h-11 sm:min-h-0"
-                    onClick={() => toggleStatus(user.id, user.status)}
-                  >
-                    {togglingIds.has(user.id)
-                      ? "Updating…"
-                      : user.status === "active" ? "Deactivate" : "Activate"}
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
     </PageShell>
