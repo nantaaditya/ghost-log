@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "member"]);
+export const announcementStatusEnum = pgEnum("announcement_status", ["draft", "published"]);
 export const userStatusEnum = pgEnum("user_status", ["pending", "active", "inactive"]);
 export const reportStatusEnum = pgEnum("report_status", ["draft", "submitted"]);
 
@@ -69,3 +70,22 @@ export type OnedriveCredentials = typeof onedriveCredentials.$inferSelect;
 export type Report = typeof reports.$inferSelect;
 export type NewReport = typeof reports.$inferInsert;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
+export const announcements = pgTable("announcements", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: varchar("title", { length: 150 }).notNull(),
+  body: text("body").notNull(),
+  imageData: text("image_data"),
+  imageAlt: varchar("image_alt", { length: 150 }),
+  authorId: uuid("author_id")
+    .notNull()
+    .references(() => users.id),
+  status: announcementStatusEnum("status").notNull().default("draft"),
+  publishedAt: timestamp("published_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export type Announcement = typeof announcements.$inferSelect;
+export type NewAnnouncement = typeof announcements.$inferInsert;

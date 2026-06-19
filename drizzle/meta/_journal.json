@@ -8,6 +8,13 @@
       "when": 1778073903075,
       "tag": "0000_furry_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781851801780,
+      "tag": "0001_worthless_kang",
+      "breakpoints": true
     }
   ]
 }

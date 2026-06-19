@@ -141,6 +141,7 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
         actions={
           <>
             <LinkButton href="/" variant="ghost" size="sm">← Dashboard</LinkButton>
+            <LinkButton href="/admin/announcements" variant="outline" size="sm">Announcements</LinkButton>
             <LinkButton href="/admin/recap" size="sm">Weekly Recap</LinkButton>
             <LinkButton href="/admin/settings" variant="outline" size="sm">Settings</LinkButton>
           </>

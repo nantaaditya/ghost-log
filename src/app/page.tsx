@@ -14,6 +14,8 @@ import CommunicationGuide from "@/components/dashboard/CommunicationGuide";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ShieldCheck, Plus, Clock, PenLine, CircleCheck, Users } from "lucide-react";
+import AnnouncementBanner from "@/components/announcement/AnnouncementBanner";
+import { listPublished } from "@/lib/announcement/repository";
 
 function initials(name: string) {
   return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
@@ -27,7 +29,8 @@ export default async function DashboardPage() {
   const currentWeekId = getCurrentWeekId();
   const userName = session.user.name ?? "User";
 
-  const [userReports, teamPastRaw] = await Promise.all([
+  const now = new Date();
+  const [userReports, teamPastRaw, publishedAnnouncements] = await Promise.all([
     db
       .select()
       .from(reports)
@@ -39,6 +42,7 @@ export default async function DashboardPage() {
       .from(reports)
       .where(and(eq(reports.status, "submitted"), ne(reports.weekId, currentWeekId)))
       .orderBy(desc(reports.submittedAt)),
+    listPublished(now),
   ]);
 
   const currentWeekReport = userReports.find((r) => r.weekId === currentWeekId);
@@ -72,6 +76,8 @@ export default async function DashboardPage() {
           </>
         }
       />
+
+      <AnnouncementBanner announcements={publishedAnnouncements} />
 
       {/* Current week status card */}
       {!currentWeekReport ? (
