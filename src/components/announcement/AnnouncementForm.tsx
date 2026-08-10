@@ -207,7 +207,7 @@ export default function AnnouncementForm({
         </select>
       </div>
 
-      <Button type="submit" disabled={submitting || compressing} className="w-full">
+      <Button type="submit" disabled={compressing} loading={submitting} className="w-full">
         {submitting ? "Saving…" : submitLabel}
       </Button>
     </form>

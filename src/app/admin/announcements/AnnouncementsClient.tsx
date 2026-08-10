@@ -233,7 +233,7 @@ export default function AnnouncementsClient({ initialAnnouncements }: Props) {
                   <Button
                     size="sm"
                     variant={a.status === "published" ? "outline" : "default"}
-                    disabled={togglingId === a.id}
+                    loading={togglingId === a.id}
                     onClick={() => handleTogglePublish(a)}
                   >
                     {togglingId === a.id
@@ -304,7 +304,7 @@ export default function AnnouncementsClient({ initialAnnouncements }: Props) {
           <DialogFooter showCloseButton>
             <Button
               variant="destructive"
-              disabled={deletingId === deleteTarget?.id}
+              loading={deletingId === deleteTarget?.id}
               onClick={handleDelete}
             >
               {deletingId ? "Deleting…" : "Delete"}

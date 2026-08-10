@@ -94,3 +94,18 @@ export const announcements = pgTable("announcements", {
 
 export type Announcement = typeof announcements.$inferSelect;
 export type NewAnnouncement = typeof announcements.$inferInsert;
+
+export const announcementComments = pgTable("announcement_comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  announcementId: uuid("announcement_id")
+    .notNull()
+    .references(() => announcements.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type AnnouncementComment = typeof announcementComments.$inferSelect;
+export type NewAnnouncementComment = typeof announcementComments.$inferInsert;

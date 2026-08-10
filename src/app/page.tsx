@@ -86,7 +86,11 @@ export default async function DashboardPage() {
         }
       />
 
-      <AnnouncementBanner announcements={publishedAnnouncements} />
+      <AnnouncementBanner
+        announcements={publishedAnnouncements}
+        currentUserId={session.user.id}
+        isAdmin={isAdmin}
+      />
 
       {/* Current week status card */}
       {!currentWeekReport ? (

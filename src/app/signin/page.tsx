@@ -99,7 +99,7 @@ function SignInContent() {
               {error && (
                 <p className="text-sm text-destructive">{error}</p>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" loading={loading}>
                 {loading ? "Signing in…" : "Sign in"}
               </Button>
             </form>

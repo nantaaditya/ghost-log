@@ -22,6 +22,13 @@
       "when": 1786366949748,
       "tag": "0002_strong_mordo",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786371226560,
+      "tag": "0003_easy_whirlwind",
+      "breakpoints": true
     }
   ]
 }

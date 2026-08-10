@@ -397,7 +397,7 @@ export default function ReportForm({ reporterName, weekId, initial, backHref, on
             {submitError && (
               <p className="text-sm text-destructive">{submitError}</p>
             )}
-            <Button type="submit" disabled={submitting} size="lg" className="w-full sm:w-auto">
+            <Button type="submit" loading={submitting} size="lg" className="w-full sm:w-auto">
               {submitting ? "Submitting…" : "Submit Report"}
             </Button>
           </form>

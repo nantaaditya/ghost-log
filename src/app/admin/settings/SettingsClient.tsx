@@ -138,10 +138,8 @@ export default function SettingsClient({ name: initialName, email: initialEmail 
             <Button
               type="submit"
               className="w-full sm:w-auto"
-              disabled={
-                savingProfile ||
-                (profileName === initialName && profileEmail === initialEmail)
-              }
+              disabled={profileName === initialName && profileEmail === initialEmail}
+              loading={savingProfile}
             >
               {savingProfile ? "Saving…" : "Save profile"}
             </Button>
@@ -189,7 +187,7 @@ export default function SettingsClient({ name: initialName, email: initialEmail 
                 minLength={8}
               />
             </div>
-            <Button type="submit" disabled={savingPw} className="w-full sm:w-auto">
+            <Button type="submit" loading={savingPw} className="w-full sm:w-auto">
               {savingPw ? "Saving…" : "Update password"}
             </Button>
           </form>

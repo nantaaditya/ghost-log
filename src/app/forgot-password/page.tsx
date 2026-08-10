@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full" loading={loading}>
                   {loading ? "Sending…" : "Send reset link"}
                 </Button>
                 <div className="text-center">

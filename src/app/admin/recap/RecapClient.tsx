@@ -98,7 +98,8 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
         </div>
         <Button
           onClick={handleGenerateSummary}
-          disabled={generating || present.length === 0}
+          disabled={present.length === 0}
+          loading={generating}
           size="sm"
           className="w-full sm:w-auto min-h-11 sm:min-h-0"
         >

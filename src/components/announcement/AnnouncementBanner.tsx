@@ -4,12 +4,15 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Announcement } from "@/lib/db/schema";
+import AnnouncementComments from "./AnnouncementComments";
 
 type Props = {
   announcements: Announcement[];
+  currentUserId: string;
+  isAdmin: boolean;
 };
 
-export default function AnnouncementBanner({ announcements }: Props) {
+export default function AnnouncementBanner({ announcements, currentUserId, isAdmin }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   if (announcements.length === 0) return null;
@@ -88,6 +91,15 @@ export default function AnnouncementBanner({ announcements }: Props) {
         {/* Body */}
         <div className="prose prose-sm max-w-none dark:prose-invert text-foreground/80">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{active.body}</ReactMarkdown>
+        </div>
+
+        {/* Comments */}
+        <div className="pt-1 border-t border-primary/10">
+          <AnnouncementComments
+            announcementId={active.id}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+          />
         </div>
 
         {/* Carousel navigation */}

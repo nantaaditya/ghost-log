@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LinkButton } from "@/components/ui/link-button";
-import { buttonVariants } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { toast } from "sonner";
@@ -39,6 +38,16 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
   const [inviting, setInviting] = useState(false);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const [resendingIds, setResendingIds] = useState<Set<string>>(new Set());
+  const [connectingOnedrive, setConnectingOnedrive] = useState(false);
+
+  function handleConnectOnedrive() {
+    setConnectingOnedrive(true);
+    window.location.href = "/api/onedrive/connect";
+    // window.location assignment has no catchable failure signal — if the redirect is
+    // blocked or never fires, fall back to re-enabling the button instead of leaving it
+    // stuck. No-op on a successful redirect since the page unloads first.
+    setTimeout(() => setConnectingOnedrive(false), 5000);
+  }
 
   const reportsByUser = recentReports.reduce<Record<string, ReportRow[]>>((acc, r) => {
     if (!acc[r.userId]) acc[r.userId] = [];
@@ -173,12 +182,14 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
             >
               {onedriveConnected ? "● Connected" : "○ Not connected"}
             </Badge>
-            <a
-              href="/api/onedrive/connect"
-              className={buttonVariants({ size: "sm", variant: onedriveConnected ? "outline" : "default" })}
+            <Button
+              size="sm"
+              variant={onedriveConnected ? "outline" : "default"}
+              loading={connectingOnedrive}
+              onClick={handleConnectOnedrive}
             >
               {onedriveConnected ? "Re-authorize" : "Connect OneDrive"}
-            </a>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -211,7 +222,7 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
                 required
               />
             </div>
-            <Button type="submit" disabled={inviting} className="w-full sm:w-auto">
+            <Button type="submit" loading={inviting} className="w-full sm:w-auto">
               {inviting ? "Sending…" : "Send invite"}
             </Button>
           </form>
@@ -248,7 +259,7 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={resendingIds.has(user.id)}
+                        loading={resendingIds.has(user.id)}
                         className="min-h-11 sm:min-h-0"
                         onClick={() => resendInvite(user.id)}
                       >
@@ -259,7 +270,7 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={resendingIds.has(user.id)}
+                        loading={resendingIds.has(user.id)}
                         className="min-h-11 sm:min-h-0"
                         onClick={() => resendReset(user.id)}
                       >
@@ -270,7 +281,7 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
                       <Button
                         size="sm"
                         variant={user.status === "active" ? "destructive" : "outline"}
-                        disabled={togglingIds.has(user.id)}
+                        loading={togglingIds.has(user.id)}
                         className="min-h-11 sm:min-h-0"
                         onClick={() => toggleStatus(user.id, user.status)}
                       >
