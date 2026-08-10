@@ -15,6 +15,13 @@
       "when": 1781851801780,
       "tag": "0001_worthless_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786366949748,
+      "tag": "0002_strong_mordo",
+      "breakpoints": true
     }
   ]
 }

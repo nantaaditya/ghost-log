@@ -49,6 +49,21 @@ async function run() {
   `;
 
   console.log("✓ Migration 0001 applied — announcements table ready");
+
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'reports_user_id_week_id_unique'
+      ) THEN
+        ALTER TABLE "reports"
+          ADD CONSTRAINT "reports_user_id_week_id_unique"
+          UNIQUE("user_id", "week_id");
+      END IF;
+    END $$
+  `;
+
+  console.log("✓ Migration 0002 applied — reports(user_id, week_id) unique constraint ready");
 }
 
 run()

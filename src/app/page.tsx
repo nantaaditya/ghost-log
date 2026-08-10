@@ -1,14 +1,14 @@
 import { auth } from "@/lib/auth/config";
 import { db } from "@/lib/db/client";
 import { reports } from "@/lib/db/schema";
-import { eq, desc, ne, and } from "drizzle-orm";
+import { eq, desc, ne, and, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
-import { getCurrentWeekId } from "@/lib/week/iso-week";
+import { getCurrentWeekId, getRecentPastWeekIds, groupWeekIdsByMonth } from "@/lib/week/iso-week";
 import SignOutButton from "@/components/SignOutButton";
 import CommunicationGuide from "@/components/dashboard/CommunicationGuide";
 import { PageShell } from "@/components/layout/PageShell";
@@ -30,7 +30,8 @@ export default async function DashboardPage() {
   const userName = session.user.name ?? "User";
 
   const now = new Date();
-  const [userReports, teamPastRaw, publishedAnnouncements] = await Promise.all([
+  const recentWeekIds = getRecentPastWeekIds(8, now);
+  const [userReports, teamPastRaw, publishedAnnouncements, recentUserReports] = await Promise.all([
     db
       .select()
       .from(reports)
@@ -43,16 +44,24 @@ export default async function DashboardPage() {
       .where(and(eq(reports.status, "submitted"), ne(reports.weekId, currentWeekId)))
       .orderBy(desc(reports.submittedAt)),
     listPublished(now),
+    db
+      .select({ weekId: reports.weekId })
+      .from(reports)
+      .where(and(eq(reports.userId, session.user.id), inArray(reports.weekId, recentWeekIds))),
   ]);
 
   const currentWeekReport = userReports.find((r) => r.weekId === currentWeekId);
   const pastReports = userReports.filter((r) => r.weekId !== currentWeekId);
+
+  const reportedRecentWeekIds = new Set(recentUserReports.map((r) => r.weekId));
+  const skippedWeeks = recentWeekIds.filter((weekId) => !reportedRecentWeekIds.has(weekId));
 
   const weekCountMap = new Map<string, number>();
   for (const r of teamPastRaw) {
     weekCountMap.set(r.weekId, (weekCountMap.get(r.weekId) ?? 0) + 1);
   }
   const teamPastWeeks = Array.from(weekCountMap.entries()).map(([weekId, count]) => ({ weekId, count }));
+  const teamPastWeekGroups = groupWeekIdsByMonth(teamPastWeeks);
 
   return (
     <PageShell>
@@ -179,6 +188,25 @@ export default async function DashboardPage() {
         </Card>
       )}
 
+      {/* Skipped weeks */}
+      {skippedWeeks.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Skipped Weeks</CardTitle>
+          </CardHeader>
+          <CardContent className="divide-y">
+            {skippedWeeks.map((weekId) => (
+              <div key={weekId} className="py-3 flex items-center justify-between">
+                <p className="font-medium text-sm">{weekId}</p>
+                <LinkButton href={`/report/${weekId}`} size="sm" className="min-h-11 sm:min-h-0">
+                  Submit
+                </LinkButton>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Team Past Weeks */}
       {teamPastWeeks.length > 0 && (
         <Card>
@@ -188,19 +216,28 @@ export default async function DashboardPage() {
               <CardTitle className="text-base">Team Past Weeks</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="divide-y">
-            {teamPastWeeks.map(({ weekId, count }) => (
-              <div key={weekId} className="py-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{weekId}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {count} member{count !== 1 ? "s" : ""} submitted
-                  </p>
+          <CardContent className="space-y-4">
+            {teamPastWeekGroups.map((group) => (
+              <div key={group.monthLabel}>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">
+                  {group.monthLabel}
+                </p>
+                <div className="divide-y">
+                  {group.items.map(({ weekId, count }) => (
+                    <div key={weekId} className="py-3 flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{weekId}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {count} member{count !== 1 ? "s" : ""} submitted
+                        </p>
+                      </div>
+                      <LinkButton href={`/team/${weekId}`} variant="outline" size="sm"
+                        className="min-h-11 sm:min-h-0">
+                        View Team
+                      </LinkButton>
+                    </div>
+                  ))}
                 </div>
-                <LinkButton href={`/team/${weekId}`} variant="outline" size="sm"
-                  className="min-h-11 sm:min-h-0">
-                  View Team
-                </LinkButton>
               </div>
             ))}
           </CardContent>

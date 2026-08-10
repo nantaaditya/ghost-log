@@ -1,0 +1,1 @@
+ALTER TABLE "reports" ADD CONSTRAINT "reports_user_id_week_id_unique" UNIQUE("user_id","week_id");

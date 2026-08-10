@@ -45,8 +45,14 @@ export function parseReport(markdown: string): ReportData | null {
 
 function extractSection(content: string, heading: string): string {
   const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Boundary requires a blank line before "---"/"#### " (matching serializeReport's
+  // actual "\n\n---" / "\n\n#### " separators), not just "\n---" / "\n#### ", so a
+  // Textarea field's own embedded content is far less likely to be mistaken for a
+  // real section boundary now that fields can span multiple lines. "---" itself may
+  // be followed by either another section ("\n\n") or the end of the document (a
+  // single trailing newline, when this is the last populated section).
   const regex = new RegExp(
-    `${escapedHeading}[\\s\\S]*?(?=\\n---\\n|\\n#### |$)`
+    `${escapedHeading}[\\s\\S]*?(?=\\n\\n---(?:\\n\\n|\\n*$)|\\n\\n#### |$)`
   );
   const match = content.match(regex);
   return match ? match[0] : "";
@@ -57,7 +63,7 @@ function parseEscalations(content: string): EscalationItem[] {
   const items: EscalationItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]*?) — ([^\n]*?)\*\* \*\(Escalation\)\*\n[ \t]+- \*\*Problem:\*\* ?([^\n]*)\n[ \t]+- \*\*Impact:\*\* ?([^\n]*)\n[ \t]+- \*\*Actions taken:\*\* ?([^\n]*)\n[ \t]+- \*\*Ask:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?) — ([^\n]*?)\*\* \*\(Escalation\)\*\n[ \t]+- \*\*Problem:\*\* ?([\s\S]*?)\n[ \t]+- \*\*Impact:\*\* ?([\s\S]*?)\n[ \t]+- \*\*Actions taken:\*\* ?([\s\S]*?)\n[ \t]+- \*\*Ask:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
@@ -80,7 +86,7 @@ function parseProductionHealth(content: string): ProductionHealthItem[] {
   const items: ProductionHealthItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]*?) — ([^\n]*?)\*\* \*\(Report Problem\)\*\n[ \t]+- \*\*Problem:\*\* ?([^\n]*)\n[ \t]+- \*\*Impact:\*\* ?([^\n]*)\n[ \t]+- \*\*Root cause:\*\* ?([^\n]*)\n[ \t]+- \*\*Next action:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?) — ([^\n]*?)\*\* \*\(Report Problem\)\*\n[ \t]+- \*\*Problem:\*\* ?([\s\S]*?)\n[ \t]+- \*\*Impact:\*\* ?([\s\S]*?)\n[ \t]+- \*\*Root cause:\*\* ?([\s\S]*?)\n[ \t]+- \*\*Next action:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
@@ -103,7 +109,7 @@ function parseTechDebt(content: string): TechDebtItem[] {
   const items: TechDebtItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]*?) — ([^\n]*?):\*\* ?([^\n]*)\n[ \t]+- \*\*Proposed Mitigation:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?) — ([^\n]*?):\*\* ?([\s\S]*?)\n[ \t]+- \*\*Proposed Mitigation:\*\* ?([^\n]*)((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
@@ -124,7 +130,7 @@ function parseDelivery(content: string): DeliveryItem[] {
   const items: DeliveryItem[] = [];
 
   const itemRegex =
-    /- \*\*([^\n]*?)\*\* \*\(Update\)\* — Sprint goal \*\*([^\n]*?)\*\*\.\n[ \t]+- \*\*Progress:\*\* ?([^\n]*)\n[ \t]+- \*\*Next steps:\*\* ?([^\n]*)(?:\n[ \t]+- \*\*Risks:\*\* ?([^\n]*))?((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
+    /- \*\*([^\n]*?)\*\* \*\(Update\)\* — Sprint goal \*\*([^\n]*?)\*\*\.\n[ \t]+- \*\*Progress:\*\* ?([\s\S]*?)\n[ \t]+- \*\*Next steps:\*\* ?([\s\S]*?)(?=\n[ \t]+- \*\*Risks:\*\*|\n[ \t]+- \*\*Jira:\*\*|\n- \*\*[^\n]*?\*\* \*\(Update\)\*|$)(?:\n[ \t]+- \*\*Risks:\*\* ?([^\n]*))?((?:\n[ \t]+- \*\*Jira:\*\* [^\n]+)*)/g;
 
   let match;
   while ((match = itemRegex.exec(section)) !== null) {
@@ -143,8 +149,8 @@ function parseDelivery(content: string): DeliveryItem[] {
 
 function parseLookAhead(content: string): { priority1: string; priority2: string } {
   const section = extractSection(content, "#### 🔮 5. Look Ahead");
-  const p1Match = section.match(/\*\*Priority 1:\*\* (.+)/);
-  const p2Match = section.match(/\*\*Priority 2:\*\* (.+)/);
+  const p1Match = section.match(/\*\*Priority 1:\*\* ([\s\S]*?)(?:\n- \*\*Priority 2:\*\*|$)/);
+  const p2Match = section.match(/\*\*Priority 2:\*\* ([\s\S]*)$/);
   return {
     priority1: p1Match?.[1]?.trim() ?? "",
     priority2: p2Match?.[1]?.trim() ?? "",

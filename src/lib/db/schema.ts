@@ -5,6 +5,7 @@ import {
   varchar,
   pgEnum,
   uuid,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "member"]);
@@ -41,17 +42,21 @@ export const onedriveCredentials = pgTable("onedrive_credentials", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const reports = pgTable("reports", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id),
-  weekId: varchar("week_id", { length: 20 }).notNull(),
-  onedrivePath: text("onedrive_path").notNull(),
-  status: reportStatusEnum("status").notNull().default("draft"),
-  submittedAt: timestamp("submitted_at"),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const reports = pgTable(
+  "reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    weekId: varchar("week_id", { length: 20 }).notNull(),
+    onedrivePath: text("onedrive_path").notNull(),
+    status: reportStatusEnum("status").notNull().default("draft"),
+    submittedAt: timestamp("submitted_at"),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [unique("reports_user_id_week_id_unique").on(table.userId, table.weekId)],
+);
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),
