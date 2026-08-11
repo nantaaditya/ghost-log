@@ -128,8 +128,8 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
             {onedriveStatus === "error" && <Alert variant="destructive" className="mb-3"><AlertDescription>Authorization failed.</AlertDescription></Alert>}
             {onedriveStatus === "connected" && <Alert className="mb-3 border-accent/20 bg-accent/5"><AlertDescription>Connected.</AlertDescription></Alert>}
             <div className="flex items-center justify-between">
-              <span className={`inline-flex items-center gap-1.5 text-[0.8rem] ${onedriveConnected ? "text-accent" : "text-muted-foreground/50"}`}>
-                <span className={`size-1.5 rounded-full ${onedriveConnected ? "bg-accent" : "bg-muted-foreground/30"}`} />
+              <span className={`inline-flex items-center gap-1.5 text-[0.8rem] ${onedriveConnected ? "text-primary" : "text-muted-foreground/50"}`}>
+                <span className={`size-1.5 rounded-full ${onedriveConnected ? "bg-primary" : "bg-muted-foreground/30"}`} />
                 {onedriveConnected ? "Connected" : "Not connected"}
               </span>
               <Button size="sm" variant={onedriveConnected ? "ghost" : "default"} loading={connectingOnedrive} onClick={handleConnectOnedrive}>
@@ -197,7 +197,7 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
                     memberReports.map((report) => (
                       <div key={report.id} className="flex items-center justify-between gap-2 group rounded-lg px-2 py-1 hover:bg-muted/30 transition-colors">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className={`size-1.5 rounded-full shrink-0 ${report.status === "submitted" ? "bg-accent/70" : "bg-amber-400/70"}`} />
+                          <span className={`size-1.5 rounded-full shrink-0 ${report.status === "submitted" ? "bg-primary/70" : "bg-amber-400/70"}`} />
                           <span className="text-[0.8rem] font-medium truncate">{report.weekId}</span>
                           {report.submittedAt && <span className="text-[0.65rem] text-muted-foreground/40 shrink-0">{new Date(report.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
                         </div>

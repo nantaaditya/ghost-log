@@ -108,11 +108,11 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Status Card */}
           {!currentWeekReport ? (
-            <Card className="border-accent/20 ambient-glow overflow-hidden">
+            <Card className="border-primary/20 overflow-hidden">
               <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-accent/10 ring-1 ring-accent/20 flex items-center justify-center shrink-0">
-                    <Clock className="h-6 w-6 text-accent" />
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 ring-1 ring-primary/20 flex items-center justify-center shrink-0">
+                    <Clock className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <p className="font-semibold text-[1rem]">This week&apos;s report</p>
@@ -121,7 +121,7 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                 </div>
-                <LinkButton href="/report/new" variant="accent" size="lg" className="w-full sm:w-auto gap-2">
+                <LinkButton href="/report/new" variant="default" size="lg" className="w-full sm:w-auto gap-2">
                   <Plus className="h-4 w-4" />
                   Write Report
                 </LinkButton>
@@ -150,11 +150,11 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-accent/10 overflow-hidden">
+            <Card className="border-primary/10 overflow-hidden">
               <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-accent/10 ring-1 ring-accent/20 flex items-center justify-center shrink-0">
-                    <CircleCheck className="h-6 w-6 text-accent" />
+                  <div className="h-12 w-12 rounded-2xl bg-primary/10 ring-1 ring-primary/20 flex items-center justify-center shrink-0">
+                    <CircleCheck className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <p className="font-semibold text-[1rem]">Report submitted</p>
@@ -224,7 +224,7 @@ export default async function DashboardPage() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className={`size-2 rounded-full shrink-0 ${
-                        report.status === "submitted" ? "bg-accent" : "bg-amber-400"
+                        report.status === "submitted" ? "bg-primary" : "bg-amber-400"
                       }`} />
                       <div className="min-w-0">
                         <p className="font-medium text-[0.85rem] truncate">{report.weekId}</p>

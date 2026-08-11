@@ -102,7 +102,7 @@ export default function AnnouncementsClient({ initialAnnouncements }: Props) {
                   <div className="space-y-1.5 min-w-0">
                     <CardTitle className="text-[0.9rem] leading-snug">{a.title}</CardTitle>
                     <div className="flex flex-wrap items-center gap-2 text-[0.7rem] text-muted-foreground/60">
-                      <Badge variant={a.status === "published" ? "accent" : "secondary"} className="text-[0.6rem]">{a.status}</Badge>
+                      <Badge variant={a.status === "published" ? "default" : "secondary"} className="text-[0.6rem]">{a.status}</Badge>
                       {a.publishedAt && <span>Published {formatDate(a.publishedAt)}</span>}
                       {a.expiresAt && <span className="text-amber-400/70">Expires {formatDate(a.expiresAt)}</span>}
                     </div>

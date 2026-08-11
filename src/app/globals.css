@@ -50,272 +50,143 @@
 }
 
 /* ============================================================
-   Apple Spatial Design System — Dark-first, Slate + Green
+   Royal Blue Design System — Light-first, Blue + Amber
    ============================================================ */
 
 :root {
-  /* Surface */
+  --background: oklch(0.985 0.005 255);
+  --foreground: oklch(0.18 0.04 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 265);
+  --popover: oklch(1 0 0 / 95%);
+  --popover-foreground: oklch(0.18 0.04 265);
+
+  --primary: oklch(0.45 0.22 265);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.93 0.04 260);
+  --secondary-foreground: oklch(0.35 0.18 265);
+  --muted: oklch(0.95 0.01 260);
+  --muted-foreground: oklch(0.48 0.03 260);
+  --accent: oklch(0.68 0.17 65);
+  --accent-foreground: oklch(0.2 0.05 65);
+  --destructive: oklch(0.55 0.24 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.88 0.025 260);
+  --input: oklch(0.88 0.025 260);
+  --ring: oklch(0.45 0.22 265 / 40%);
+
+  --chart-1: oklch(0.45 0.22 265);
+  --chart-2: oklch(0.62 0.18 200);
+  --chart-3: oklch(0.68 0.17 65);
+  --chart-4: oklch(0.55 0.15 290);
+  --chart-5: oklch(0.6 0.18 160);
+  --radius: 0.625rem;
+
+  --sidebar: oklch(0.98 0.005 260);
+  --sidebar-foreground: oklch(0.18 0.04 265);
+  --sidebar-primary: oklch(0.45 0.22 265);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.93 0.04 260);
+  --sidebar-accent-foreground: oklch(0.35 0.18 265);
+  --sidebar-border: oklch(0.88 0.025 260);
+  --sidebar-ring: oklch(0.45 0.22 265 / 40%);
+}
+
+.dark {
   --background: oklch(0.13 0.012 255);
   --foreground: oklch(0.93 0.005 255);
-
-  /* Cards — elevated frosted glass */
   --card: oklch(0.17 0.018 255 / 80%);
   --card-foreground: oklch(0.93 0.005 255);
-
-  /* Popovers — more opaque glass */
   --popover: oklch(0.19 0.02 255 / 90%);
   --popover-foreground: oklch(0.95 0.003 255);
 
-  /* Primary — cool slate */
-  --primary: oklch(0.62 0.012 255);
+  --primary: oklch(0.62 0.18 265);
   --primary-foreground: oklch(0.13 0.012 255);
-
-  /* Secondary */
   --secondary: oklch(0.22 0.015 255);
   --secondary-foreground: oklch(0.82 0.01 255);
-
-  /* Muted */
   --muted: oklch(0.2 0.012 255);
   --muted-foreground: oklch(0.55 0.015 255);
-
-  /* Accent — green (submit, complete, positive) */
-  --accent: oklch(0.62 0.19 150);
-  --accent-foreground: oklch(0.13 0.012 255);
-
-  /* Destructive — softer red */
+  --accent: oklch(0.62 0.16 60);
+  --accent-foreground: oklch(0.15 0.03 60);
   --destructive: oklch(0.55 0.2 20);
   --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.62 0.18 265 / 50%);
 
-  /* Borders — whisper-subtle */
-  --border: oklch(1 0 0 / 7%);
-  --input: oklch(1 0 0 / 9%);
-  --ring: oklch(0.62 0.19 150 / 50%);
+  --chart-1: oklch(0.62 0.18 265);
+  --chart-2: oklch(0.6 0.15 220);
+  --chart-3: oklch(0.62 0.16 60);
+  --chart-4: oklch(0.55 0.15 290);
+  --chart-5: oklch(0.6 0.15 160);
 
-  /* Charts */
-  --chart-1: oklch(0.62 0.19 150);
-  --chart-2: oklch(0.65 0.15 220);
-  --chart-3: oklch(0.68 0.18 50);
-  --chart-4: oklch(0.6 0.15 290);
-  --chart-5: oklch(0.65 0.12 180);
-
-  --radius: 0.625rem;
-
-  /* Sidebar */
   --sidebar: oklch(0.15 0.012 255);
   --sidebar-foreground: oklch(0.93 0.005 255);
-  --sidebar-primary: oklch(0.62 0.012 255);
+  --sidebar-primary: oklch(0.62 0.18 265);
   --sidebar-primary-foreground: oklch(0.13 0.012 255);
   --sidebar-accent: oklch(0.22 0.015 255);
   --sidebar-accent-foreground: oklch(0.82 0.01 255);
-  --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.62 0.19 150 / 50%);
-}
-
-/* Light mode override */
-.light {
-  --background: oklch(0.975 0.003 255);
-  --foreground: oklch(0.14 0.015 255);
-
-  --card: oklch(1 0 0 / 85%);
-  --card-foreground: oklch(0.14 0.015 255);
-
-  --popover: oklch(1 0 0 / 92%);
-  --popover-foreground: oklch(0.14 0.015 255);
-
-  --primary: oklch(0.35 0.01 255);
-  --primary-foreground: oklch(0.99 0 0);
-
-  --secondary: oklch(0.94 0.008 255);
-  --secondary-foreground: oklch(0.3 0.015 255);
-
-  --muted: oklch(0.95 0.006 255);
-  --muted-foreground: oklch(0.5 0.012 255);
-
-  --accent: oklch(0.58 0.18 150);
-  --accent-foreground: oklch(0.99 0 0);
-
-  --destructive: oklch(0.55 0.24 25);
-  --destructive-foreground: oklch(0.99 0 0);
-
-  --border: oklch(0 0 0 / 8%);
-  --input: oklch(0 0 0 / 10%);
-  --ring: oklch(0.58 0.18 150 / 50%);
-
-  --chart-1: oklch(0.58 0.18 150);
-  --chart-2: oklch(0.55 0.15 220);
-  --chart-3: oklch(0.62 0.18 50);
-  --chart-4: oklch(0.55 0.15 290);
-  --chart-5: oklch(0.55 0.12 180);
-
-  --sidebar: oklch(0.97 0.003 255);
-  --sidebar-foreground: oklch(0.14 0.015 255);
-  --sidebar-primary: oklch(0.35 0.01 255);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.94 0.008 255);
-  --sidebar-accent-foreground: oklch(0.3 0.015 255);
-  --sidebar-border: oklch(0 0 0 / 8%);
-  --sidebar-ring: oklch(0.58 0.18 150 / 50%);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.62 0.18 265 / 50%);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-  html {
-    @apply font-sans;
-    scroll-behavior: smooth;
-  }
-
-  :focus-visible {
-    @apply outline-2 outline-offset-2 outline-ring/60 rounded-sm;
-  }
-
-  ::selection {
-    @apply bg-accent/25 text-foreground;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground antialiased; font-feature-settings: "cv02", "cv03", "cv04", "cv11"; }
+  html { @apply font-sans; scroll-behavior: smooth; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-ring/60 rounded-sm; }
+  ::selection { @apply bg-primary/20 text-foreground; }
 }
 
 @layer components {
-  /* === Glass surfaces === */
-  .glass-card {
-    @apply bg-card backdrop-blur-2xl border border-border/40;
-  }
-  .glass-popover {
-    @apply bg-popover backdrop-blur-3xl border border-border/50 shadow-2xl;
-  }
-
-  /* === Elevation system === */
+  .glass-card { @apply bg-card backdrop-blur-2xl border border-border/40; }
+  .glass-popover { @apply bg-popover backdrop-blur-3xl border border-border/50 shadow-2xl; }
   .elevation-0 { box-shadow: none; }
-  .elevation-1 { box-shadow: 0 1px 2px oklch(0 0 0 / 15%); }
-  .elevation-2 { box-shadow: 0 4px 12px oklch(0 0 0 / 20%); }
-  .elevation-3 { box-shadow: 0 8px 24px oklch(0 0 0 / 30%); }
+  .elevation-1 { box-shadow: 0 1px 2px oklch(0 0 0 / 8%); }
+  .elevation-2 { box-shadow: 0 4px 12px oklch(0 0 0 / 12%); }
+  .elevation-3 { box-shadow: 0 8px 24px oklch(0 0 0 / 18%); }
 
-  /* === Bento grid === */
-  .bento-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-  }
-  @media (max-width: 1024px) {
-    .bento-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (max-width: 640px) {
-    .bento-grid { grid-template-columns: 1fr; }
-  }
-
+  .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+  @media (max-width: 1024px) { .bento-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .bento-grid { grid-template-columns: 1fr; } }
   .bento-col-2 { grid-column: span 2; }
   .bento-col-3 { grid-column: span 3; }
   .bento-col-4 { grid-column: span 4; }
   .bento-row-2 { grid-row: span 2; }
 
-  /* === Subtle ambient glow (for hero cards) === */
-  .ambient-glow {
-    position: relative;
-  }
+  .ambient-glow { position: relative; }
   .ambient-glow::after {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    background: linear-gradient(
-      135deg,
-      oklch(0.62 0.19 150 / 12%),
-      transparent 40%,
-      transparent 60%,
-      oklch(0.55 0.15 220 / 8%)
-    );
-    pointer-events: none;
-    z-index: -1;
+    content: ''; position: absolute; inset: -1px; border-radius: inherit;
+    background: linear-gradient(135deg, oklch(0.45 0.22 265 / 15%), transparent 40%, transparent 60%, oklch(0.55 0.15 200 / 10%));
+    pointer-events: none; z-index: -1;
   }
 
-  /* === Dot indicator (Apple-style) === */
-  .dot {
-    @apply inline-block size-2 rounded-full;
-  }
-  .dot-green { @apply bg-accent; }
+  .dot { @apply inline-block size-2 rounded-full; }
+  .dot-blue { @apply bg-primary; }
   .dot-amber { @apply bg-amber-400; }
   .dot-red { @apply bg-destructive; }
   .dot-slate { @apply bg-muted-foreground; }
 }
 
 @layer utilities {
-  /* === Spring entrance animations === */
-  .animate-enter {
-    animation: springEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  .animate-enter-up {
-    animation: springEnterUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  .animate-enter-scale {
-    animation: springEnterScale 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  /* Stagger children */
-  .stagger > * {
-    --stagger-delay: 0s;
-    animation-delay: var(--stagger-delay);
-  }
-  .stagger-1 { --stagger-delay: 0.04s; }
-  .stagger-2 { --stagger-delay: 0.08s; }
-  .stagger-3 { --stagger-delay: 0.12s; }
-  .stagger-4 { --stagger-delay: 0.16s; }
-  .stagger-5 { --stagger-delay: 0.20s; }
-  .stagger-6 { --stagger-delay: 0.24s; }
-  .stagger-7 { --stagger-delay: 0.28s; }
-  .stagger-8 { --stagger-delay: 0.32s; }
-
-  /* Skeleton shimmer */
-  .skeleton {
-    @apply relative overflow-hidden rounded-md bg-muted;
-  }
-  .skeleton::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      oklch(1 0 0 / 4%) 40%,
-      oklch(1 0 0 / 4%) 60%,
-      transparent 100%
-    );
-    animation: shimmer 2s infinite;
-  }
+  .animate-enter { animation: springEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-enter-up { animation: springEnterUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-enter-scale { animation: springEnterScale 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .stagger > * { --stagger-delay: 0s; animation-delay: var(--stagger-delay); }
+  .stagger-1 { --stagger-delay: 0.04s; } .stagger-2 { --stagger-delay: 0.08s; }
+  .stagger-3 { --stagger-delay: 0.12s; } .stagger-4 { --stagger-delay: 0.16s; }
+  .stagger-5 { --stagger-delay: 0.20s; } .stagger-6 { --stagger-delay: 0.24s; }
+  .stagger-7 { --stagger-delay: 0.28s; } .stagger-8 { --stagger-delay: 0.32s; }
+  .skeleton { @apply relative overflow-hidden rounded-md bg-muted; }
+  .skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, oklch(0 0 0 / 4%) 40%, oklch(0 0 0 / 4%) 60%, transparent 100%); animation: shimmer 2s infinite; }
 }
 
-/* ============================================================
-   Spring Keyframes
-   ============================================================ */
+@keyframes springEnter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes springEnterUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes springEnterScale { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-@keyframes springEnter {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes springEnterUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes springEnterScale {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
-}
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* ============================================================
-   Reduced motion
-   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   html { scroll-behavior: auto; }
 }

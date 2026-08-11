@@ -31,9 +31,9 @@ export default function AnnouncementBanner({ announcements, currentUserId, isAdm
   return (
     <div
       key={active.id}
-      className="relative rounded-2xl overflow-hidden ring-1 ring-accent/15 bg-accent/[0.03] backdrop-blur-xl"
+      className="relative rounded-2xl overflow-hidden ring-1 ring-primary/15 bg-primary/[0.03] backdrop-blur-xl"
     >
-      <div className="h-0.5 bg-gradient-to-r from-accent/60 via-accent/30 to-transparent" />
+      <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary/30 to-transparent" />
 
       {active.imageData && (
         <div className="overflow-hidden">
@@ -48,7 +48,7 @@ export default function AnnouncementBanner({ announcements, currentUserId, isAdm
       <div className="p-5 space-y-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-widest text-accent">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-widest text-primary">
               <span className="size-1.5 rounded-full bg-accent" />
               Announcement
             </span>
