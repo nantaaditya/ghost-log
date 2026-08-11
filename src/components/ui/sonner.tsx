@@ -12,33 +12,30 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
-        success: (
-          <CircleCheckIcon className="size-4" />
-        ),
-        info: (
-          <InfoIcon className="size-4" />
-        ),
-        warning: (
-          <TriangleAlertIcon className="size-4" />
-        ),
-        error: (
-          <OctagonXIcon className="size-4" />
-        ),
-        loading: (
-          <Loader2Icon className="size-4 animate-spin" />
-        ),
+        success: <CircleCheckIcon className="size-4" />,
+        info: <InfoIcon className="size-4" />,
+        warning: <TriangleAlertIcon className="size-4" />,
+        error: <OctagonXIcon className="size-4" />,
+        loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
       style={
         {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--border-radius": "var(--radius-xl)",
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
-          toast: "cn-toast",
+          toast:
+            "group/toast !font-sans !text-sm !shadow-2xl !border !border-border/30 !bg-popover !backdrop-blur-3xl !rounded-2xl",
+          title: "!font-medium !text-foreground !text-[0.85rem]",
+          description: "!text-muted-foreground !text-[0.8rem]",
+          actionButton:
+            "!bg-foreground !text-background !rounded-full !text-xs !font-medium !h-8 !px-4",
+          cancelButton:
+            "!bg-muted !text-muted-foreground !rounded-full !text-xs !font-medium !h-8 !px-4",
         },
       }}
       {...props}

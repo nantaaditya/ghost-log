@@ -10,12 +10,23 @@ type Props = {
 
 export function PageHeader({ title, subtitle, leading, actions, className }: Props) {
   return (
-    <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>
-      <div className="flex items-center gap-3 min-w-0">
-        {leading}
+    <header
+      className={cn(
+        "flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between",
+        className
+      )}
+    >
+      <div className="flex items-center gap-4 min-w-0">
+        {leading && <div className="shrink-0">{leading}</div>}
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold sm:text-2xl">{title}</h1>
-          {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+          <h1 className="text-[1.35rem] font-semibold tracking-tight sm:text-[1.5rem]">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-[0.8rem] text-muted-foreground mt-1 font-medium tracking-wide uppercase">
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
       {actions && (
@@ -23,6 +34,6 @@ export function PageHeader({ title, subtitle, leading, actions, className }: Pro
           {actions}
         </div>
       )}
-    </div>
+    </header>
   );
 }

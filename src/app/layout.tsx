@@ -1,18 +1,27 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { bootstrapAdmin } from "@/lib/auth/bootstrap";
 
-const geist = Geist({
-  variable: "--font-geist",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "Alamak Team",
-  description: "Weekly engineering report platform",
+  title: "Alamak — Weekly Engineering Reports",
+  description:
+    "Structured weekly reports for engineering teams. Write, submit, review. AI-powered summaries.",
 };
 
 export default async function RootLayout({
@@ -22,12 +31,16 @@ export default async function RootLayout({
 }>) {
   await bootstrapAdmin();
   return (
-    <html lang="en" className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-gray-50">
-        <SessionProvider>
-          {children}
-        </SessionProvider>
-        <Toaster />
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full flex flex-col bg-background">
+        <ThemeProvider>
+          <SessionProvider>{children}</SessionProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

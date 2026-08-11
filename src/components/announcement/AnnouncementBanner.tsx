@@ -31,70 +31,54 @@ export default function AnnouncementBanner({ announcements, currentUserId, isAdm
   return (
     <div
       key={active.id}
-      className="relative rounded-xl overflow-hidden border-2 border-primary/30 bg-primary/5 dark:bg-primary/10 shadow-sm motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-3 motion-safe:duration-500"
+      className="relative rounded-2xl overflow-hidden ring-1 ring-accent/15 bg-accent/[0.03] backdrop-blur-xl"
     >
-      {/* Accent stripe */}
-      <div className="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-primary/30" />
+      <div className="h-0.5 bg-gradient-to-r from-accent/60 via-accent/30 to-transparent" />
 
-      {/* Hero image */}
       {active.imageData && (
         <div className="overflow-hidden">
           <img
             src={active.imageData}
             alt={active.imageAlt ?? active.title}
-            className="w-full max-h-56 object-cover"
+            className="w-full max-h-48 object-cover"
           />
         </div>
       )}
 
-      <div className="p-4 sm:p-5 space-y-3">
-        {/* Header row: badge + counter + date */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider text-primary-foreground">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="h-3 w-3 shrink-0"
-                aria-hidden="true"
-              >
-                <path d="M3.5 2A1.5 1.5 0 0 0 2 3.5v.75a.75.75 0 0 0 1.5 0V3.5h.75a.75.75 0 0 0 0-1.5H3.5ZM3.5 16.5h.75a.75.75 0 0 1 0 1.5H3.5A1.5 1.5 0 0 1 2 16.5v-.75a.75.75 0 0 1 1.5 0v.75ZM16.5 2A1.5 1.5 0 0 1 18 3.5v.75a.75.75 0 0 1-1.5 0V3.5h-.75a.75.75 0 0 1 0-1.5h.75ZM15 18h.75a.75.75 0 0 0 0-1.5H15v-.75a.75.75 0 0 0-1.5 0v.75A1.5 1.5 0 0 0 15 18ZM10 5a5 5 0 1 0 0 10A5 5 0 0 0 10 5Z" />
-              </svg>
-              Pengumuman
+      <div className="p-5 space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-widest text-accent">
+              <span className="size-1.5 rounded-full bg-accent" />
+              Announcement
             </span>
             {hasMultiple && (
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {activeIndex + 1} / {announcements.length}
+              <span className="text-[0.7rem] text-muted-foreground/50 tabular-nums">
+                {activeIndex + 1} of {announcements.length}
               </span>
             )}
           </div>
           {active.publishedAt && (
             <time
               dateTime={new Date(active.publishedAt).toISOString()}
-              className="text-xs text-muted-foreground shrink-0"
+              className="text-[0.7rem] text-muted-foreground/50 shrink-0"
             >
-              {new Date(active.publishedAt).toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
+              {new Date(active.publishedAt).toLocaleDateString("en-US", {
+                month: "long", day: "numeric", year: "numeric",
               })}
             </time>
           )}
         </div>
 
-        {/* Title */}
-        <h2 className="text-xl font-bold leading-snug sm:text-2xl tracking-tight">
+        <h2 className="text-lg font-semibold tracking-tight leading-snug">
           {active.title}
         </h2>
 
-        {/* Body */}
-        <div className="prose prose-sm max-w-none dark:prose-invert text-foreground/80">
+        <div className="prose prose-sm max-w-none prose-invert text-foreground/70 text-[0.85rem] leading-relaxed">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{active.body}</ReactMarkdown>
         </div>
 
-        {/* Comments */}
-        <div className="pt-1 border-t border-primary/10">
+        <div className="pt-1 border-t border-border/20">
           <AnnouncementComments
             announcementId={active.id}
             currentUserId={currentUserId}
@@ -102,28 +86,27 @@ export default function AnnouncementBanner({ announcements, currentUserId, isAdm
           />
         </div>
 
-        {/* Carousel navigation */}
         {hasMultiple && (
-          <div className="flex items-center gap-3 pt-1 border-t border-primary/10">
+          <div className="flex items-center gap-4 pt-1 border-t border-border/20">
             <button
               onClick={prev}
               disabled={activeIndex === 0}
-              className="text-xs font-medium text-primary disabled:opacity-30 hover:underline transition-opacity"
+              className="text-[0.75rem] font-medium text-muted-foreground/50 hover:text-foreground disabled:opacity-20 transition-colors"
               aria-label="Previous announcement"
             >
-              ← Sebelumnya
+              ← Prev
             </button>
 
-            <div className="flex gap-1.5 flex-1 justify-center" aria-label="Announcement dots">
+            <div className="flex gap-1.5 flex-1 justify-center">
               {announcements.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setActiveIndex(i)}
                   aria-label={`Announcement ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all duration-200 ${
+                  className={`h-1 rounded-full transition-all duration-300 ${
                     i === activeIndex
-                      ? "w-5 bg-primary"
-                      : "w-1.5 bg-primary/30 hover:bg-primary/60"
+                      ? "w-5 bg-accent/70"
+                      : "w-1 bg-foreground/10 hover:bg-foreground/20"
                   }`}
                 />
               ))}
@@ -132,10 +115,10 @@ export default function AnnouncementBanner({ announcements, currentUserId, isAdm
             <button
               onClick={next}
               disabled={activeIndex === announcements.length - 1}
-              className="text-xs font-medium text-primary disabled:opacity-30 hover:underline transition-opacity"
+              className="text-[0.75rem] font-medium text-muted-foreground/50 hover:text-foreground disabled:opacity-20 transition-colors"
               aria-label="Next announcement"
             >
-              Selanjutnya →
+              Next →
             </button>
           </div>
         )}

@@ -10,18 +10,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { toast } from "sonner";
+import { Users, HardDrive, UserPlus, MoreHorizontal, Mail, ShieldBan, ShieldCheck, KeyRound } from "lucide-react";
 import type { User } from "@/lib/db/schema";
 
 type ReportRow = {
-  id: string;
-  weekId: string;
-  status: string;
-  submittedAt: Date | null;
-  updatedAt: Date;
-  userId: string;
-  userName: string;
-  userEmail: string;
+  id: string; weekId: string; status: string;
+  submittedAt: Date | null; updatedAt: Date;
+  userId: string; userName: string; userEmail: string;
 };
 
 type Props = {
@@ -43,9 +40,6 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
   function handleConnectOnedrive() {
     setConnectingOnedrive(true);
     window.location.href = "/api/onedrive/connect";
-    // window.location assignment has no catchable failure signal — if the redirect is
-    // blocked or never fires, fall back to re-enabling the button instead of leaving it
-    // stuck. No-op on a successful redirect since the page unloads first.
     setTimeout(() => setConnectingOnedrive(false), 5000);
   }
 
@@ -60,23 +54,14 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
     setInviting(true);
     try {
       const res = await fetch("/api/admin/invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inviteEmail, name: inviteName }),
       });
       const json = await res.json();
-      if (json.success) {
-        toast.success(`Invite sent to ${inviteEmail}`);
-        setInviteEmail("");
-        setInviteName("");
-      } else {
-        toast.error(json.error ?? "Failed to send invite");
-      }
-    } catch {
-      toast.error("Network error — please try again");
-    } finally {
-      setInviting(false);
-    }
+      if (json.success) { toast.success(`Invite sent to ${inviteEmail}`); setInviteEmail(""); setInviteName(""); }
+      else toast.error(json.error ?? "Failed to send invite");
+    } catch { toast.error("Network error"); }
+    finally { setInviting(false); }
   }
 
   async function resendInvite(userId: string) {
@@ -84,16 +69,10 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
     try {
       const res = await fetch(`/api/admin/users/${userId}/resend-invite`, { method: "POST" });
       const json = await res.json();
-      if (json.success) {
-        toast.success("Invite resent");
-      } else {
-        toast.error(json.error ?? "Failed to resend invite");
-      }
-    } catch {
-      toast.error("Network error — please try again");
-    } finally {
-      setResendingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; });
-    }
+      if (json.success) toast.success("Invite resent");
+      else toast.error(json.error ?? "Failed");
+    } catch { toast.error("Network error"); }
+    finally { setResendingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; }); }
   }
 
   async function resendReset(userId: string) {
@@ -101,16 +80,10 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
     try {
       const res = await fetch(`/api/admin/users/${userId}/resend-reset`, { method: "POST" });
       const json = await res.json();
-      if (json.success) {
-        toast.success("Password reset email sent");
-      } else {
-        toast.error(json.error ?? "Failed to send reset email");
-      }
-    } catch {
-      toast.error("Network error — please try again");
-    } finally {
-      setResendingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; });
-    }
+      if (json.success) toast.success("Password reset sent");
+      else toast.error(json.error ?? "Failed");
+    } catch { toast.error("Network error"); }
+    finally { setResendingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; }); }
   }
 
   async function toggleStatus(userId: string, currentStatus: string) {
@@ -118,225 +91,123 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
     setTogglingIds((prev) => new Set(prev).add(userId));
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
       const json = await res.json();
       if (json.success) {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, status: newStatus as User["status"] } : u))
-        );
+        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: newStatus as User["status"] } : u)));
         toast.success(newStatus === "active" ? "User activated" : "User deactivated");
-      } else {
-        toast.error("Failed to update user");
-      }
-    } catch {
-      toast.error("Network error — please try again");
-    } finally {
-      setTogglingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(userId);
-        return next;
-      });
-    }
+      } else toast.error("Failed to update user");
+    } catch { toast.error("Network error"); }
+    finally { setTogglingIds((prev) => { const next = new Set(prev); next.delete(userId); return next; }); }
   }
 
   return (
     <PageShell maxWidth="4xl">
       <PageHeader
-        title="Admin Panel"
-        subtitle="Team management & reports"
+        title="Admin"
+        subtitle={`${users.length} team members`}
         actions={
-          <>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
             <LinkButton href="/" variant="ghost" size="sm">← Dashboard</LinkButton>
-            <LinkButton href="/admin/announcements" variant="outline" size="sm">Announcements</LinkButton>
-            <LinkButton href="/admin/recap" size="sm">Weekly Recap</LinkButton>
-            <LinkButton href="/admin/settings" variant="outline" size="sm">Settings</LinkButton>
-          </>
+            <LinkButton href="/admin/announcements" variant="ghost" size="sm">Announcements</LinkButton>
+            <LinkButton href="/admin/recap" variant="ghost" size="sm">Recap</LinkButton>
+            <LinkButton href="/admin/settings" variant="ghost" size="sm">Settings</LinkButton>
+          </div>
         }
       />
 
-      {/* OneDrive Connection */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">OneDrive Connection</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {onedriveStatus === "error" && (
-            <Alert variant="destructive">
-              <AlertDescription>OneDrive authorization failed. Please try again.</AlertDescription>
-            </Alert>
-          )}
-          {onedriveStatus === "connected" && (
-            <Alert>
-              <AlertDescription>OneDrive connected successfully!</AlertDescription>
-            </Alert>
-          )}
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge
-              variant="outline"
-              className={onedriveConnected
-                ? "border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400"
-                : "border-muted-foreground/30 text-muted-foreground"}
-            >
-              {onedriveConnected ? "● Connected" : "○ Not connected"}
-            </Badge>
-            <Button
-              size="sm"
-              variant={onedriveConnected ? "outline" : "default"}
-              loading={connectingOnedrive}
-              onClick={handleConnectOnedrive}
-            >
-              {onedriveConnected ? "Re-authorize" : "Connect OneDrive"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Invite Team Member */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Invite Team Member</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleInvite} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-            <div className="space-y-1">
-              <Label htmlFor="invite-name">Display name</Label>
-              <Input
-                id="invite-name"
-                placeholder="e.g. Budi Santoso"
-                value={inviteName}
-                onChange={(e) => setInviteName(e.target.value)}
-                required
-              />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2"><HardDrive className="h-4 w-4 text-muted-foreground/60" /><CardTitle className="text-[0.85rem]">OneDrive</CardTitle></div>
+          </CardHeader>
+          <CardContent>
+            {onedriveStatus === "error" && <Alert variant="destructive" className="mb-3"><AlertDescription>Authorization failed.</AlertDescription></Alert>}
+            {onedriveStatus === "connected" && <Alert className="mb-3 border-accent/20 bg-accent/5"><AlertDescription>Connected.</AlertDescription></Alert>}
+            <div className="flex items-center justify-between">
+              <span className={`inline-flex items-center gap-1.5 text-[0.8rem] ${onedriveConnected ? "text-accent" : "text-muted-foreground/50"}`}>
+                <span className={`size-1.5 rounded-full ${onedriveConnected ? "bg-accent" : "bg-muted-foreground/30"}`} />
+                {onedriveConnected ? "Connected" : "Not connected"}
+              </span>
+              <Button size="sm" variant={onedriveConnected ? "ghost" : "default"} loading={connectingOnedrive} onClick={handleConnectOnedrive}>
+                {onedriveConnected ? "Re-authorize" : "Connect"}
+              </Button>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="invite-email">Email</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                placeholder="budi@example.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" loading={inviting} className="w-full sm:w-auto">
-              {inviting ? "Sending…" : "Send invite"}
-            </Button>
-          </form>
-          <p className="text-xs text-muted-foreground mt-2">
-            The display name is used as the OneDrive folder name — must match exactly.
-          </p>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Team Members + Reports (merged) */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2"><UserPlus className="h-4 w-4 text-muted-foreground/60" /><CardTitle className="text-[0.85rem]">Invite Member</CardTitle></div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleInvite} className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label htmlFor="invite-name" className="text-[0.75rem]">Name</Label><Input id="invite-name" placeholder="e.g. Budi" value={inviteName} onChange={(e) => setInviteName(e.target.value)} required /></div>
+                <div className="space-y-1.5"><Label htmlFor="invite-email" className="text-[0.75rem]">Email</Label><Input id="invite-email" type="email" placeholder="budi@example.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required /></div>
+              </div>
+              <Button type="submit" size="sm" loading={inviting} className="self-start">{inviting ? "Sending…" : "Send invite"}</Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Team Members</CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2"><Users className="h-4 w-4 text-muted-foreground/60" /><CardTitle className="text-[0.85rem]">Team Members</CardTitle></div>
         </CardHeader>
-        <CardContent className="divide-y">
+        <CardContent className="divide-y divide-border/30 pt-0 px-0 pb-0">
           {users.map((user) => {
             const memberReports = reportsByUser[user.id] ?? [];
             return (
-              <div key={user.id} className="py-4 space-y-3">
-                {/* Member header: name, status, actions */}
+              <div key={user.id} className="px-5 py-4 space-y-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-8 w-8 rounded-full bg-muted/60 ring-1 ring-border/30 flex items-center justify-center shrink-0">
+                      <span className="text-[0.65rem] font-semibold text-foreground/50">{user.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-[0.85rem] truncate">{user.name}</p>
+                      <p className="text-[0.7rem] text-muted-foreground/60 truncate">{user.email}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={
-                      user.status === "active" ? "default" :
-                      user.status === "pending" ? "secondary" : "outline"
-                    }>
-                      {user.status}
-                    </Badge>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge variant={user.status === "active" ? "accent" : user.status === "pending" ? "secondary" : "outline"}>{user.status}</Badge>
                     {user.role !== "admin" && user.status === "pending" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        loading={resendingIds.has(user.id)}
-                        className="min-h-11 sm:min-h-0"
-                        onClick={() => resendInvite(user.id)}
-                      >
-                        {resendingIds.has(user.id) ? "Sending…" : "Resend invite"}
-                      </Button>
+                      <Button size="xs" variant="ghost" loading={resendingIds.has(user.id)} onClick={() => resendInvite(user.id)}><Mail className="h-3 w-3" />Resend invite</Button>
                     )}
                     {user.role !== "admin" && user.status === "active" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        loading={resendingIds.has(user.id)}
-                        className="min-h-11 sm:min-h-0"
-                        onClick={() => resendReset(user.id)}
-                      >
-                        {resendingIds.has(user.id) ? "Sending…" : "Send password reset"}
-                      </Button>
+                      <Button size="xs" variant="ghost" loading={resendingIds.has(user.id)} onClick={() => resendReset(user.id)}><KeyRound className="h-3 w-3" />Send reset</Button>
                     )}
                     {user.role !== "admin" && user.status !== "pending" && (
-                      <Button
-                        size="sm"
-                        variant={user.status === "active" ? "destructive" : "outline"}
-                        loading={togglingIds.has(user.id)}
-                        className="min-h-11 sm:min-h-0"
-                        onClick={() => toggleStatus(user.id, user.status)}
-                      >
-                        {togglingIds.has(user.id)
-                          ? "Updating…"
-                          : user.status === "active" ? "Deactivate" : "Activate"}
+                      <Button size="xs" variant="ghost" loading={togglingIds.has(user.id)} onClick={() => toggleStatus(user.id, user.status)}
+                        className={user.status === "active" ? "text-destructive/60 hover:text-destructive" : ""}>
+                        {user.status === "active" ? <><ShieldBan className="h-3 w-3" />Deactivate</> : <><ShieldCheck className="h-3 w-3" />Activate</>}
                       </Button>
                     )}
                   </div>
                 </div>
-
-                {/* Recent reports (last 1 month) */}
-                <div className="pl-3 border-l-2 border-muted space-y-1.5">
+                <div className="pl-11 space-y-0.5">
                   {memberReports.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No reports this month.</p>
+                    <p className="text-[0.7rem] text-muted-foreground/40">No reports this month</p>
                   ) : (
                     memberReports.map((report) => (
-                      <div
-                        key={report.id}
-                        className={`flex items-center justify-between gap-2 rounded px-2 py-1.5 ${report.status === "draft" ? "border-l-2 border-amber-400 pl-2 -ml-2" : ""}`}
-                      >
-                        <div>
-                          <span className="text-xs font-medium">{report.weekId}</span>
-                          {report.submittedAt && (
-                            <span className="text-xs text-muted-foreground ml-2">
-                              {new Date(report.submittedAt).toLocaleDateString()}
-                            </span>
-                          )}
+                      <div key={report.id} className="flex items-center justify-between gap-2 group rounded-lg px-2 py-1 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className={`size-1.5 rounded-full shrink-0 ${report.status === "submitted" ? "bg-accent/70" : "bg-amber-400/70"}`} />
+                          <span className="text-[0.8rem] font-medium truncate">{report.weekId}</span>
+                          {report.submittedAt && <span className="text-[0.65rem] text-muted-foreground/40 shrink-0">{new Date(report.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={report.status === "submitted" ? "default" : "secondary"} className="text-xs">
-                            {report.status}
-                          </Badge>
-                          {report.status === "submitted" && (
-                            <LinkButton
-                              href={`/admin/reports/${report.userId}/${report.weekId}`}
-                              variant="outline"
-                              size="sm"
-                              className="min-h-0 h-6 text-xs px-2"
-                            >
-                              View
-                            </LinkButton>
-                          )}
-                        </div>
+                        {report.status === "submitted" && (
+                          <LinkButton href={`/admin/reports/${report.userId}/${report.weekId}`} variant="ghost" size="xs" className="opacity-0 group-hover:opacity-100 transition-opacity">View</LinkButton>
+                        )}
                       </div>
                     ))
                   )}
-                  <LinkButton
-                    href={`/admin/members/${user.id}`}
-                    variant="ghost"
-                    size="sm"
-                    className="min-h-0 h-6 text-xs px-0 text-muted-foreground hover:text-foreground"
-                  >
-                    View full history →
-                  </LinkButton>
+                  <LinkButton href={`/admin/members/${user.id}`} variant="ghost" size="xs" className="text-muted-foreground/50 hover:text-foreground mt-0.5"><MoreHorizontal className="h-3 w-3" />Full history</LinkButton>
                 </div>
               </div>
             );

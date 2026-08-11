@@ -16,8 +16,14 @@ type Props = {
 
 export function PageShell({ children, maxWidth = "3xl", className }: Props) {
   return (
-    <div className={cn("mx-auto w-full px-4 py-5 sm:px-6 sm:py-6 space-y-6", widthMap[maxWidth], className)}>
+    <main
+      className={cn(
+        "mx-auto w-full px-5 py-8 sm:px-8 sm:py-12 space-y-8",
+        widthMap[maxWidth],
+        className
+      )}
+    >
       {children}
-    </div>
+    </main>
   );
 }

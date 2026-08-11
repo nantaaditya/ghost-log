@@ -5,15 +5,18 @@ import { eq, desc, ne, and, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import { getCurrentWeekId, getRecentPastWeekIds, groupWeekIdsByMonth } from "@/lib/week/iso-week";
 import SignOutButton from "@/components/SignOutButton";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import CommunicationGuide from "@/components/dashboard/CommunicationGuide";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ShieldCheck, Plus, Clock, PenLine, CircleCheck, Users } from "lucide-react";
+import {
+  ShieldCheck, Plus, Clock, PenLine, CircleCheck, Users,
+  FileText, ArrowRight, ChevronRight,
+} from "lucide-react";
 import AnnouncementBanner from "@/components/announcement/AnnouncementBanner";
 import { listPublished } from "@/lib/announcement/repository";
 
@@ -64,192 +67,233 @@ export default async function DashboardPage() {
   const teamPastWeekGroups = groupWeekIdsByMonth(teamPastWeeks);
 
   return (
-    <PageShell>
+    <PageShell maxWidth="4xl">
+      {/* Header */}
       <PageHeader
         title={userName}
-        subtitle={currentWeekId}
+        subtitle={`Week ${currentWeekId}`}
         leading={
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shrink-0">
-            <span className="text-sm font-bold text-primary-foreground">{initials(userName)}</span>
+          <div className="h-9 w-9 rounded-full bg-muted/60 ring-1 ring-border/40 flex items-center justify-center shrink-0">
+            <span className="text-xs font-semibold text-foreground/60">{initials(userName)}</span>
           </div>
         }
         actions={
-          <>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
             {isAdmin && (
-              <LinkButton href="/admin" variant="secondary" size="sm" className="gap-1.5">
+              <LinkButton href="/admin" variant="ghost" size="sm">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Admin
               </LinkButton>
             )}
             <SignOutButton />
-          </>
+          </div>
         }
       />
 
+      {/* Announcements */}
       <AnnouncementBanner
         announcements={publishedAnnouncements}
         currentUserId={session.user.id}
         isAdmin={isAdmin}
       />
 
-      {/* Current week status card */}
-      {!currentWeekReport ? (
-        <Card className="border-primary/30 bg-primary/5 shadow-sm">
-          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-primary shrink-0" />
-              <div>
-                <p className="font-semibold text-primary">This week's report is due</p>
-                <p className="text-sm text-muted-foreground mt-0.5">{currentWeekId} · not started</p>
-              </div>
-            </div>
-            <LinkButton href="/report/new" className="gap-1.5 w-full justify-center sm:w-auto">
-              <Plus className="h-4 w-4" />
-              New Report
-            </LinkButton>
-          </CardContent>
-        </Card>
-      ) : currentWeekReport.status === "draft" ? (
-        <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
-          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <PenLine className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <div>
-                <p className="font-semibold text-amber-700 dark:text-amber-400">Draft in progress</p>
-                <p className="text-sm text-muted-foreground mt-0.5">{currentWeekId} · not submitted</p>
-              </div>
-            </div>
-            <LinkButton href={`/report/${currentWeekId}`} className="w-full justify-center sm:w-auto">
-              Continue
-            </LinkButton>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30">
-          <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <CircleCheck className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
-              <div>
-                <p className="font-semibold text-green-700 dark:text-green-400">Report submitted</p>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {currentWeekId} · {currentWeekReport.submittedAt?.toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <LinkButton href={`/report/${currentWeekId}/view`} variant="outline" size="sm"
-                className="min-h-11 flex-1 justify-center sm:min-h-0 sm:flex-none">
-                View
-              </LinkButton>
-              <LinkButton href={`/report/${currentWeekId}`} variant="default" size="sm"
-                className="min-h-11 flex-1 justify-center sm:min-h-0 sm:flex-none">
-                Re-edit
-              </LinkButton>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Past reports */}
-      {pastReports.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Past Reports</CardTitle>
-          </CardHeader>
-          <CardContent className="divide-y">
-            {pastReports.map((report) => (
-              <div key={report.id}
-                className={`py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-l-2 pl-3 -ml-px ${
-                  report.status === "draft" ? "border-amber-400" : "border-transparent"
-                }`}>
-                <div>
-                  <p className="font-medium text-sm">{report.weekId}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {report.submittedAt
-                      ? `Submitted ${report.submittedAt.toLocaleDateString()}`
-                      : "Draft"}
-                  </p>
+      {/* ============================================
+          MAIN LAYOUT: 2 cols on desktop
+          LEFT (2/3): Status → Guide (full width)
+          RIGHT (1/3): Your Reports → Team Activity
+          ============================================ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* === LEFT COLUMN (spans 2) === */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Status Card */}
+          {!currentWeekReport ? (
+            <Card className="border-accent/20 ambient-glow overflow-hidden">
+              <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-accent/10 ring-1 ring-accent/20 flex items-center justify-center shrink-0">
+                    <Clock className="h-6 w-6 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[1rem]">This week&apos;s report</p>
+                    <p className="text-[0.8rem] text-muted-foreground mt-0.5">
+                      {currentWeekId} — not started yet
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={report.status === "submitted" ? "default" : "secondary"}>
-                    {report.status}
-                  </Badge>
-                  {report.status === "submitted" ? (
-                    <>
-                      <LinkButton href={`/report/${report.weekId}/view`} variant="outline" size="sm"
-                        className="min-h-11 sm:min-h-0">View</LinkButton>
-                      <LinkButton href={`/report/${report.weekId}`} variant="ghost" size="sm"
-                        className="min-h-11 sm:min-h-0 text-muted-foreground">Re-edit</LinkButton>
-                    </>
-                  ) : (
-                    <LinkButton href={`/report/${report.weekId}`} size="sm"
-                      className="min-h-11 sm:min-h-0">Continue</LinkButton>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Skipped weeks */}
-      {skippedWeeks.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Skipped Weeks</CardTitle>
-          </CardHeader>
-          <CardContent className="divide-y">
-            {skippedWeeks.map((weekId) => (
-              <div key={weekId} className="py-3 flex items-center justify-between">
-                <p className="font-medium text-sm">{weekId}</p>
-                <LinkButton href={`/report/${weekId}`} size="sm" className="min-h-11 sm:min-h-0">
-                  Submit
+                <LinkButton href="/report/new" variant="accent" size="lg" className="w-full sm:w-auto gap-2">
+                  <Plus className="h-4 w-4" />
+                  Write Report
                 </LinkButton>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
+          ) : currentWeekReport.status === "draft" ? (
+            <Card className="border-amber-500/10 overflow-hidden">
+              <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-amber-500/10 ring-1 ring-amber-500/20 flex items-center justify-center shrink-0">
+                    <PenLine className="h-6 w-6 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[1rem]">Draft in progress</p>
+                    <p className="text-[0.8rem] text-muted-foreground mt-0.5">
+                      {currentWeekId} — not yet submitted
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <LinkButton href={`/report/${currentWeekId}/view`} variant="ghost" size="lg"
+                    className="w-full sm:w-auto">Preview</LinkButton>
+                  <LinkButton href={`/report/${currentWeekId}`} variant="default" size="lg"
+                    className="w-full sm:w-auto">Continue Editing</LinkButton>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-accent/10 overflow-hidden">
+              <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-accent/10 ring-1 ring-accent/20 flex items-center justify-center shrink-0">
+                    <CircleCheck className="h-6 w-6 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[1rem]">Report submitted</p>
+                    <p className="text-[0.8rem] text-muted-foreground mt-0.5">
+                      {currentWeekId} · {currentWeekReport.submittedAt?.toLocaleDateString("en-US", {
+                        weekday: "short", month: "short", day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <LinkButton href={`/report/${currentWeekId}/view`} variant="ghost" size="lg"
+                    className="w-full sm:w-auto">View</LinkButton>
+                  <LinkButton href={`/report/${currentWeekId}`} variant="secondary" size="lg"
+                    className="w-full sm:w-auto">Re-edit</LinkButton>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Team Past Weeks */}
-      {teamPastWeeks.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-base">Team Past Weeks</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {teamPastWeekGroups.map((group) => (
-              <div key={group.monthLabel}>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">
-                  {group.monthLabel}
-                </p>
-                <div className="divide-y">
-                  {group.items.map(({ weekId, count }) => (
-                    <div key={weekId} className="py-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{weekId}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {count} member{count !== 1 ? "s" : ""} submitted
+          {/* Writing Guide — full width under status */}
+          <CommunicationGuide />
+
+          {/* Skipped weeks */}
+          {skippedWeeks.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[0.85rem]">Skipped Weeks</CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y divide-border/30 pt-0 px-0 pb-0">
+                {skippedWeeks.map((weekId) => (
+                  <div key={weekId} className="px-5 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="size-2 rounded-full bg-muted-foreground/30 shrink-0" />
+                      <p className="font-medium text-[0.85rem]">{weekId}</p>
+                    </div>
+                    <LinkButton href={`/report/${weekId}`} variant="ghost" size="xs">
+                      Backfill
+                      <ArrowRight className="h-3 w-3" />
+                    </LinkButton>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* === RIGHT COLUMN === */}
+        <div className="space-y-5">
+          {/* Past reports */}
+          {pastReports.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground/60" />
+                  <CardTitle>Your Reports</CardTitle>
+                  <span className="text-[0.7rem] text-muted-foreground/50 ml-auto">
+                    {pastReports.length}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="divide-y divide-border/30 pt-0 px-0 pb-0">
+                {pastReports.slice(0, 8).map((report) => (
+                  <div
+                    key={report.id}
+                    className="group px-5 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors duration-150"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`size-2 rounded-full shrink-0 ${
+                        report.status === "submitted" ? "bg-accent" : "bg-amber-400"
+                      }`} />
+                      <div className="min-w-0">
+                        <p className="font-medium text-[0.85rem] truncate">{report.weekId}</p>
+                        <p className="text-[0.7rem] text-muted-foreground/60">
+                          {report.submittedAt
+                            ? report.submittedAt.toLocaleDateString("en-US", {
+                                month: "short", day: "numeric",
+                              })
+                            : "Draft"}
                         </p>
                       </div>
-                      <LinkButton href={`/team/${weekId}`} variant="outline" size="sm"
-                        className="min-h-11 sm:min-h-0">
-                        View Team
-                      </LinkButton>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+                    <div className="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                      {report.status === "submitted" ? (
+                        <>
+                          <LinkButton href={`/report/${report.weekId}/view`} variant="ghost" size="xs">View</LinkButton>
+                          <LinkButton href={`/report/${report.weekId}`} variant="ghost" size="xs"
+                            className="text-muted-foreground">Edit</LinkButton>
+                        </>
+                      ) : (
+                        <LinkButton href={`/report/${report.weekId}`} variant="ghost" size="xs">
+                          Continue <ChevronRight className="h-3 w-3" />
+                        </LinkButton>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Guide moved below primary content — reference material, not action */}
-      <CommunicationGuide />
+          {/* Team activity */}
+          {teamPastWeeks.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground/60" />
+                  <CardTitle>Team Activity</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                {teamPastWeekGroups.slice(0, 2).map((group) => (
+                  <div key={group.monthLabel}>
+                    <p className="text-[0.65rem] font-semibold text-muted-foreground/50 uppercase tracking-widest mb-1.5">
+                      {group.monthLabel}
+                    </p>
+                    <div className="space-y-0.5">
+                      {group.items.slice(0, 4).map(({ weekId, count }) => (
+                        <LinkButton
+                          key={weekId}
+                          href={`/team/${weekId}`}
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-between group font-normal"
+                        >
+                          <span className="text-[0.8rem]">{weekId}</span>
+                          <span className="text-[0.7rem] text-muted-foreground/60">
+                            {count} {count === 1 ? "report" : "reports"}
+                          </span>
+                        </LinkButton>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </PageShell>
   );
 }

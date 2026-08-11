@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -25,11 +25,8 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      if (data.success) {
-        setSubmitted(true);
-      } else {
-        setError(data.error ?? "Something went wrong");
-      }
+      if (data.success) { setSubmitted(true); }
+      else { setError(data.error ?? "Something went wrong"); }
     } catch {
       setError("Network error — please try again");
     } finally {
@@ -38,53 +35,53 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center shadow-md">
-            <FileText className="h-7 w-7 text-primary-foreground" />
+    <div className="min-h-screen flex items-center justify-center p-5">
+      <div className="w-full max-w-sm space-y-8 animate-enter-up">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-foreground/5 ring-1 ring-border/40 flex items-center justify-center">
+            <span className="text-lg font-semibold tracking-tight text-foreground/70">A</span>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Reset password</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Enter your email to receive a reset link
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight">Reset password</h1>
+            <p className="text-[0.8rem] text-muted-foreground/60 mt-1">
+              We&apos;ll send you a reset link
             </p>
           </div>
         </div>
 
-        <Card className="shadow-md border-border/60">
+        <Card>
           <CardContent className="pt-6 pb-6">
             {submitted ? (
-              <div className="space-y-4 text-center">
-                <p className="text-sm text-muted-foreground">
+              <div className="space-y-5 text-center">
+                <p className="text-[0.85rem] text-muted-foreground/70 leading-relaxed">
                   If an account exists for{" "}
-                  <span className="font-medium text-foreground">{email}</span>,
-                  a password reset link has been sent. Check your inbox.
+                  <span className="font-medium text-foreground/80">{email}</span>,
+                  a reset link has been sent. Check your inbox.
                 </p>
-                <Link href="/signin" className="text-sm text-primary hover:underline block">
+                <Link href="/signin"
+                  className="text-[0.8rem] text-foreground/60 hover:text-foreground inline-flex items-center gap-1.5 transition-colors">
+                  <ArrowLeft className="h-3.5 w-3.5" />
                   Back to sign in
                 </Link>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
+                    id="email" type="email" autoComplete="email"
                     placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={email} onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full" loading={loading}>
+                {error && <p className="text-[0.8rem] text-destructive font-medium">{error}</p>}
+                <Button type="submit" className="w-full" size="lg" loading={loading}>
                   {loading ? "Sending…" : "Send reset link"}
                 </Button>
                 <div className="text-center">
-                  <Link href="/signin" className="text-sm text-muted-foreground hover:text-foreground">
+                  <Link href="/signin"
+                    className="text-[0.8rem] text-muted-foreground/60 hover:text-foreground transition-colors">
                     Back to sign in
                   </Link>
                 </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { LogOut } from "lucide-react";
 
 export default function SignOutButton() {
   const [signingOut, setSigningOut] = useState(false);
@@ -20,12 +21,13 @@ export default function SignOutButton() {
 
   return (
     <Button
-      variant="outline"
+      variant="ghost"
       size="sm"
-      className="border-destructive/50 text-destructive hover:bg-destructive hover:text-white hover:border-destructive transition-colors"
+      className="text-muted-foreground hover:text-foreground"
       loading={signingOut}
       onClick={handleSignOut}
     >
+      <LogOut className="h-3.5 w-3.5" />
       Sign out
     </Button>
   );

@@ -16,123 +16,66 @@ type ParsedMember = { userId: string; userName: string; report: ReportData };
 
 export default async function TeamDashboard() {
   const weekId = getCurrentWeekId();
-
   const [activeMembers, submitted] = await Promise.all([
-    db
-      .select({ id: users.id, name: users.name })
-      .from(users)
-      .where(and(eq(users.role, "member"), eq(users.status, "active"))),
-    db
-      .select({ userId: reports.userId, userName: users.name })
-      .from(reports)
-      .innerJoin(users, eq(reports.userId, users.id))
-      .where(and(eq(reports.weekId, weekId), eq(reports.status, "submitted"))),
+    db.select({ id: users.id, name: users.name }).from(users).where(and(eq(users.role, "member"), eq(users.status, "active"))),
+    db.select({ userId: reports.userId, userName: users.name }).from(reports).innerJoin(users, eq(reports.userId, users.id)).where(and(eq(reports.weekId, weekId), eq(reports.status, "submitted"))),
   ]);
 
-  const settled = await Promise.allSettled(
-    submitted.map(async ({ userId, userName }) => {
-      const markdown = await readFile(buildReportPath(userName, weekId));
-      const report = parseReport(markdown);
-      return { userId, userName, report };
-    })
-  );
+  const settled = await Promise.allSettled(submitted.map(async ({ userId, userName }) => {
+    const markdown = await readFile(buildReportPath(userName, weekId));
+    const report = parseReport(markdown);
+    return { userId, userName, report };
+  }));
 
-  const present: ParsedMember[] = settled
-    .filter(
-      (r): r is PromiseFulfilledResult<{ userId: string; userName: string; report: ReportData }> =>
-        r.status === "fulfilled" && r.value.report !== null
-    )
-    .map((r) => r.value);
-
+  const present: ParsedMember[] = settled.filter((r): r is PromiseFulfilledResult<ParsedMember> => r.status === "fulfilled" && r.value.report !== null).map((r) => r.value);
   const submittedIds = new Set(submitted.map((s) => s.userId));
   const missing = activeMembers.filter((m) => !submittedIds.has(m.id));
-
-  const healthCounts: Record<"on-track" | "at-risk" | "off-track", number> = {
-    "on-track": 0,
-    "at-risk": 0,
-    "off-track": 0,
-  };
-  for (const { report } of present) {
-    healthCounts[report.healthIndicator]++;
-  }
-
-  const allEscalations = present.flatMap(({ userName, report }) =>
-    report.escalations.map((e) => ({ ...e, userName }))
-  );
-
+  const healthCounts: Record<"on-track" | "at-risk" | "off-track", number> = { "on-track": 0, "at-risk": 0, "off-track": 0 };
+  for (const { report } of present) healthCounts[report.healthIndicator]++;
+  const allEscalations = present.flatMap(({ userName, report }) => report.escalations.map((e) => ({ ...e, userName })));
   const total = activeMembers.length;
   const submissionRate = total > 0 ? Math.round((submitted.length / total) * 100) : 0;
 
   return (
     <PageShell maxWidth="4xl" className="pb-0 sm:pb-0">
-      {/* Submission + health overview */}
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">This Week — {weekId}</CardTitle>
-            <LinkButton href={`/admin/recap?week=${weekId}`} variant="ghost" size="sm">
-              Full Recap →
-            </LinkButton>
+            <CardTitle className="text-[0.9rem]">This Week — {weekId}</CardTitle>
+            <LinkButton href={`/admin/recap?week=${weekId}`} variant="ghost" size="sm">Full Recap →</LinkButton>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground shrink-0">
-              {submitted.length} / {total} submitted
-            </span>
-            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full ${submissionRate >= 80 ? "bg-green-500" : submissionRate >= 50 ? "bg-amber-500" : "bg-red-500"}`}
-                style={{ width: `${submissionRate}%` }}
-              />
+            <span className="text-[0.8rem] text-muted-foreground/60 shrink-0">{submitted.length}/{total} submitted</span>
+            <div className="flex-1 h-1.5 bg-muted/60 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${submissionRate >= 80 ? "bg-accent" : submissionRate >= 50 ? "bg-amber-400/70" : "bg-destructive/60"}`} style={{ width: `${submissionRate}%` }} />
             </div>
-            <span className="text-sm font-medium shrink-0">{submissionRate}%</span>
+            <span className="text-[0.8rem] font-medium shrink-0 tabular-nums">{submissionRate}%</span>
           </div>
-
           <div className="grid grid-cols-3 gap-3">
-            {(
-              [
-                { key: "on-track", cls: "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/40", numCls: "text-green-700 dark:text-green-400" },
-                { key: "at-risk", cls: "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40", numCls: "text-amber-700 dark:text-amber-400" },
-                { key: "off-track", cls: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40", numCls: "text-red-700 dark:text-red-400" },
-              ] as const
-            ).map(({ key, cls, numCls }) => (
-              <div key={key} className={`border rounded-lg p-2 sm:p-3 text-center ${cls}`}>
-                <p className={`text-2xl font-bold ${numCls}`}>{healthCounts[key]}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{HEALTH_LABELS[key]}</p>
+            {(["on-track", "at-risk", "off-track"] as const).map((key) => (
+              <div key={key} className="rounded-xl border border-border/40 bg-muted/20 p-3 text-center">
+                <p className="text-2xl font-semibold tabular-nums text-foreground/80">{healthCounts[key]}</p>
+                <p className="text-[0.7rem] text-muted-foreground/60 mt-0.5">{HEALTH_LABELS[key]}</p>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Action Required */}
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-base">🚨 Action Required</CardTitle>
-            {allEscalations.length > 0 && (
-              <Badge variant="destructive" className="text-xs">{allEscalations.length}</Badge>
-            )}
-          </div>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2"><CardTitle className="text-[0.85rem]">Escalations</CardTitle>{allEscalations.length > 0 && <Badge variant="destructive" className="text-[0.6rem]">{allEscalations.length}</Badge>}</div>
         </CardHeader>
         <CardContent>
-          {allEscalations.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No escalations this week.</p>
-          ) : (
+          {allEscalations.length === 0 ? <p className="text-[0.8rem] text-muted-foreground/50">No escalations this week.</p> : (
             <div className="space-y-3">
               {allEscalations.map((e, i) => (
-                <div key={i} className="border rounded-lg p-3 text-sm space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{e.project}</span>
-                    <Badge variant="outline" className="text-xs">{e.userName}</Badge>
-                  </div>
-                  <p className="text-muted-foreground">{e.topic}</p>
-                  <p><span className="font-medium">Ask:</span> {e.ask}</p>
-                  {(e.jiraLinks ?? []).filter(Boolean).map((link, li) => (
-                    <a key={li} href={link} target="_blank" rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline break-all block">{link}</a>
-                  ))}
+                <div key={i} className="rounded-xl border border-border/30 bg-muted/20 p-3 space-y-1.5 text-sm">
+                  <div className="flex items-center gap-2"><span className="font-medium text-[0.85rem]">{e.project}</span><Badge variant="outline" className="text-[0.65rem]">{e.userName}</Badge></div>
+                  <p className="text-muted-foreground/70 text-[0.8rem]">{e.topic}</p>
+                  <p className="text-[0.8rem]"><span className="font-medium">Ask:</span> {e.ask}</p>
                 </div>
               ))}
             </div>
@@ -140,21 +83,10 @@ export default async function TeamDashboard() {
         </CardContent>
       </Card>
 
-      {/* Missing reporters */}
       {missing.length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base text-muted-foreground">
-              Missing Reports ({missing.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {missing.map((m) => (
-                <Badge key={m.id} variant="outline">{m.name}</Badge>
-              ))}
-            </div>
-          </CardContent>
+          <CardHeader className="pb-3"><CardTitle className="text-[0.85rem] text-muted-foreground">Missing Reports ({missing.length})</CardTitle></CardHeader>
+          <CardContent><div className="flex flex-wrap gap-2">{missing.map((m) => <Badge key={m.id} variant="outline" className="text-[0.7rem]">{m.name}</Badge>)}</div></CardContent>
         </Card>
       )}
     </PageShell>

@@ -18,15 +18,8 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match");
-      return;
-    }
+    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (password !== confirm) { setError("Passwords do not match"); return; }
 
     setLoading(true);
     try {
@@ -36,11 +29,8 @@ export default function ResetPasswordPage() {
         body: JSON.stringify({ token: params.token, password }),
       });
       const data = await res.json();
-      if (!data.success) {
-        setError(data.error ?? "Something went wrong");
-      } else {
-        router.push("/signin?reset=1");
-      }
+      if (!data.success) { setError(data.error ?? "Something went wrong"); }
+      else { router.push("/signin?reset=1"); }
     } catch {
       setError("Network error — please try again");
     } finally {
@@ -49,45 +39,50 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm shadow-md border-border/60">
-        <CardHeader>
-          <CardTitle>Set new password</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Choose a new password for your account
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="password">New password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="confirm">Confirm password</Label>
-              <Input
-                id="confirm"
-                type="password"
-                autoComplete="new-password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-              />
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" loading={loading}>
-              {loading ? "Saving…" : "Reset password"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center p-5">
+      <div className="w-full max-w-sm space-y-8 animate-enter-up">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-foreground/5 ring-1 ring-border/40 flex items-center justify-center">
+            <span className="text-lg font-semibold tracking-tight text-foreground/70">A</span>
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight">New password</h1>
+            <p className="text-[0.8rem] text-muted-foreground/60 mt-1">
+              Choose a new password
+            </p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Set password</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">New password</Label>
+                <Input
+                  id="password" type="password" autoComplete="new-password"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm">Confirm password</Label>
+                <Input
+                  id="confirm" type="password" autoComplete="new-password"
+                  value={confirm} onChange={(e) => setConfirm(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <p className="text-[0.8rem] text-destructive font-medium">{error}</p>}
+              <Button type="submit" className="w-full" size="lg" loading={loading}>
+                {loading ? "Saving…" : "Reset password"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

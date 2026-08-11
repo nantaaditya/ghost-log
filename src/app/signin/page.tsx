@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 function SignInContent() {
   const router = useRouter();
@@ -24,13 +24,9 @@ function SignInContent() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
+      email, password, redirect: false,
     });
-
     setLoading(false);
     if (result?.error) {
       setError("Invalid email or password");
@@ -40,67 +36,64 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center shadow-md">
-            <FileText className="h-7 w-7 text-primary-foreground" />
+    <div className="min-h-screen flex items-center justify-center p-5">
+      <div className="w-full max-w-sm space-y-8 animate-enter-up">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-foreground/5 ring-1 ring-border/40 flex items-center justify-center">
+            <span className="text-lg font-semibold tracking-tight text-foreground/70">A</span>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Alamak Team</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Weekly engineering reports
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight">Alamak</h1>
+            <p className="text-[0.8rem] text-muted-foreground/60 mt-1">
+              Engineering Reports
             </p>
           </div>
         </div>
 
+        {/* Status messages */}
         {justInvited && (
-          <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-4 py-3 text-sm text-green-700 dark:text-green-400 text-center">
-            Account activated! Sign in with your new password.
+          <div className="rounded-2xl bg-accent/10 border border-accent/20 px-4 py-3 text-[0.8rem] text-accent text-center">
+            Account activated — sign in below.
           </div>
         )}
         {justReset && (
-          <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30 px-4 py-3 text-sm text-green-700 dark:text-green-400 text-center">
-            Password reset successfully. Sign in with your new password.
+          <div className="rounded-2xl bg-accent/10 border border-accent/20 px-4 py-3 text-[0.8rem] text-accent text-center">
+            Password reset — sign in below.
           </div>
         )}
 
-        <Card className="shadow-md border-border/60">
-          <CardContent className="pt-6 pb-6 space-y-4">
+        {/* Form */}
+        <Card>
+          <CardContent className="pt-6 pb-6 space-y-5">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
+                  id="email" type="email" autoComplete="email"
                   placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={email} onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground">
-                    Forgot password?
+                  <Link href="/forgot-password"
+                    className="text-[0.75rem] text-muted-foreground/50 hover:text-foreground transition-colors">
+                    Forgot?
                   </Link>
                 </div>
                 <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="password" type="password" autoComplete="current-password"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
-              <Button type="submit" className="w-full" loading={loading}>
-                {loading ? "Signing in…" : "Sign in"}
+              {error && <p className="text-[0.8rem] text-destructive font-medium">{error}</p>}
+              <Button type="submit" className="w-full" size="lg" loading={loading}>
+                Sign in
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </form>
           </CardContent>
