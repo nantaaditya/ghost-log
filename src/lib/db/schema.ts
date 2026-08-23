@@ -6,12 +6,14 @@ import {
   pgEnum,
   uuid,
   unique,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "member"]);
 export const announcementStatusEnum = pgEnum("announcement_status", ["draft", "published"]);
 export const userStatusEnum = pgEnum("user_status", ["pending", "active", "inactive"]);
 export const reportStatusEnum = pgEnum("report_status", ["draft", "submitted"]);
+export const healthIndicatorEnum = pgEnum("health_indicator", ["on-track", "at-risk", "off-track"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -54,6 +56,9 @@ export const reports = pgTable(
     status: reportStatusEnum("status").notNull().default("draft"),
     submittedAt: timestamp("submitted_at"),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    healthIndicator: healthIndicatorEnum("health_indicator"),
+    escalationCount: integer("escalation_count"),
+    incidentCount: integer("incident_count"),
   },
   (table) => [unique("reports_user_id_week_id_unique").on(table.userId, table.weekId)],
 );

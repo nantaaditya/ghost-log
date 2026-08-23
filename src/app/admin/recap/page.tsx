@@ -7,6 +7,7 @@ import { isValidWeekId, getCurrentWeekId } from "@/lib/week/iso-week";
 import { readFile } from "@/lib/graph/files";
 import { buildReportPath } from "@/lib/graph/paths";
 import { parseReport } from "@/lib/markdown/parse";
+import { getHealthTrend } from "@/lib/db/reports";
 import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -44,16 +45,19 @@ export default async function RecapPage({ searchParams }: Props) {
     .innerJoin(users, eq(reports.userId, users.id))
     .where(and(eq(reports.weekId, weekId), eq(reports.status, "submitted")));
 
-  const memberRecaps: MemberRecap[] = await Promise.all(
-    submitted.map(async ({ userId, userName }) => {
-      try {
-        const markdown = await readFile(buildReportPath(userName, weekId));
-        return { userId, userName, report: parseReport(markdown) };
-      } catch {
-        return { userId, userName, report: null };
-      }
-    })
-  );
+  const [memberRecaps, trend] = await Promise.all([
+    Promise.all(
+      submitted.map(async ({ userId, userName }) => {
+        try {
+          const markdown = await readFile(buildReportPath(userName, weekId));
+          return { userId, userName, report: parseReport(markdown) };
+        } catch {
+          return { userId, userName, report: null };
+        }
+      })
+    ),
+    getHealthTrend(8),
+  ]);
 
   const weeks = availableWeeks.map((r) => r.weekId);
   if (!weeks.includes(weekId)) weeks.unshift(weekId);
@@ -70,6 +74,7 @@ export default async function RecapPage({ searchParams }: Props) {
         weekId={weekId}
         weeks={weeks}
         memberRecaps={memberRecaps}
+        trend={trend}
       />
     </PageShell>
   );

@@ -6,24 +6,27 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LinkButton } from "@/components/ui/link-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
-import { FileText, Sparkles, Copy, TrendingUp, AlertTriangle, ShieldAlert, CheckCircle2, Clock } from "lucide-react";
+import { FileText, Sparkles, Copy, TrendingUp, AlertTriangle, ShieldAlert, CheckCircle2, Users, ArrowRight } from "lucide-react";
 import { HEALTH_LABELS } from "@/types/report";
+import HealthTrendChart from "@/components/admin/HealthTrendChart";
+import type { WeekHealthTrend } from "@/lib/db/health-trend";
 import type { MemberRecap } from "./page";
 
-type Props = { weekId: string; weeks: string[]; memberRecaps: MemberRecap[] };
+type Props = { weekId: string; weeks: string[]; memberRecaps: MemberRecap[]; trend: WeekHealthTrend[] };
 
 const HEALTH_BADGE: Record<string, "default" | "accent" | "destructive"> = {
   "on-track": "default", "at-risk": "accent", "off-track": "destructive",
 };
-const SPRINT_BADGE: Record<string, "default" | "accent" | "destructive"> = {
-  Achieved: "default", Ongoing: "accent", Missed: "destructive",
+const HEALTH_DOT: Record<string, string> = {
+  "on-track": "bg-primary", "at-risk": "bg-accent", "off-track": "bg-destructive",
 };
+const HEALTH_RANK: Record<string, number> = { "off-track": 0, "at-risk": 1, "on-track": 2 };
+
 function reportHref(userId: string, weekId: string) { return `/admin/reports/${userId}/${weekId}`; }
 
-export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
+export default function RecapClient({ weekId, weeks, memberRecaps, trend }: Props) {
   const router = useRouter();
   const [summary, setSummary] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -31,14 +34,18 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
 
   const missing = memberRecaps.filter((m) => m.report === null);
   const present = memberRecaps.filter((m) => m.report !== null);
+  const sortedPresent = [...present].sort((a, b) => {
+    const rankDiff = HEALTH_RANK[a.report!.healthIndicator] - HEALTH_RANK[b.report!.healthIndicator];
+    return rankDiff !== 0 ? rankDiff : a.userName.localeCompare(b.userName);
+  });
   const allEscalations = present.flatMap((m) => m.report!.escalations.map((e) => ({ ...e, userId: m.userId, userName: m.userName })));
-  const allIncidents = present.flatMap((m) => m.report!.productionHealth.map((inc) => ({ ...inc, userId: m.userId, userName: m.userName })));
 
   const healthCounts = { "on-track": 0, "at-risk": 0, "off-track": 0 };
   for (const { report } of present) healthCounts[report!.healthIndicator]++;
   const total = memberRecaps.length;
   const submissionRate = total > 0 ? Math.round((present.length / total) * 100) : 0;
   const offTrackMembers = present.filter((m) => m.report!.healthIndicator === "off-track");
+  const needsAttention = offTrackMembers.length > 0 || missing.length > 0 || allEscalations.length > 0;
 
   async function handleGenerateSummary() {
     setGenerating(true);
@@ -89,71 +96,82 @@ export default function RecapClient({ weekId, weeks, memberRecaps }: Props) {
         </CardContent></Card>
       </div>
 
-      {/* Off-track alert banner */}
-      {offTrackMembers.length > 0 && (
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3">
-          <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-[0.85rem] text-destructive">Attention Required</p>
-            <p className="text-[0.8rem] text-muted-foreground mt-0.5">
-              {offTrackMembers.map((m) => m.userName).join(", ")} {offTrackMembers.length === 1 ? "is" : "are"} reporting off-track.
-            </p>
-          </div>
-        </div>
+      {/* ===== NEEDS YOUR ATTENTION ===== */}
+      {needsAttention && (
+        <Card className="border-destructive/20">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-destructive" /><CardTitle className="text-[0.85rem]">Needs Your Attention</CardTitle></div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {offTrackMembers.length > 0 && (
+              <div className="flex items-start gap-2.5">
+                <span className="size-2 rounded-full bg-destructive shrink-0 mt-1.5" />
+                <p className="text-[0.8rem]"><span className="font-medium">{offTrackMembers.map((m) => m.userName).join(", ")}</span>{" "}{offTrackMembers.length === 1 ? "is" : "are"} reporting off-track this week.</p>
+              </div>
+            )}
+            {missing.length > 0 && (
+              <div className="flex items-start gap-2.5">
+                <span className="size-2 rounded-full bg-muted-foreground/40 shrink-0 mt-1.5" />
+                <p className="text-[0.8rem]"><span className="font-medium">{missing.length} member{missing.length > 1 ? "s" : ""}</span> haven&apos;t submitted: {missing.map((m) => m.userName).join(", ")}</p>
+              </div>
+            )}
+            {allEscalations.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[0.7rem] font-semibold text-muted-foreground/60 uppercase tracking-wide mb-1.5">Escalations ({allEscalations.length})</p>
+                {allEscalations.map((e, i) => (
+                  <Link key={i} href={reportHref(e.userId, weekId)} className="group flex items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 hover:bg-muted/40 transition-colors">
+                    <span className="text-[0.7rem] font-medium text-muted-foreground/60 shrink-0 pt-0.5 w-16 truncate">{e.userName}</span>
+                    <span className="text-[0.8rem] flex-1 min-w-0 truncate"><span className="font-medium">{e.project}:</span> {e.ask}</span>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-foreground shrink-0 mt-0.5 transition-colors" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {missing.length > 0 && (
-        <Card><CardHeader className="pb-3"><div className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground/50" /><CardTitle className="text-[0.85rem]">Missing Reports ({missing.length})</CardTitle></div></CardHeader><CardContent><div className="flex flex-wrap gap-2">{missing.map((m) => <Badge key={m.userId} variant="outline" className="text-[0.7rem]">{m.userName}</Badge>)}</div></CardContent></Card>
-      )}
+      {/* ===== 8-WEEK TREND ===== */}
+      <Card>
+        <CardHeader className="pb-3"><CardTitle className="text-[0.85rem]">8-Week Trend</CardTitle></CardHeader>
+        <CardContent><HealthTrendChart weeks={trend} variant="full" /></CardContent>
+      </Card>
 
       {generating && <Card><CardContent className="p-6 space-y-3"><div className="skeleton h-4 w-1/3" /><div className="skeleton h-3 w-full" /><div className="skeleton h-3 w-5/6" /></CardContent></Card>}
 
+      {/* ===== TEAM STATUS — click any row for the full report ===== */}
       {present.length === 0 ? (
         <EmptyState icon={<FileText className="h-5 w-5" />} title="No reports for this week" description={`No submitted reports found for ${weekId}.`} />
       ) : (
-        <>
-          <Card>
-            <CardHeader className="pb-3"><CardTitle className="text-[0.85rem]">Team Summaries</CardTitle></CardHeader>
-            <CardContent>
-              <div className="divide-y divide-border/30">
-                {present.map((m) => {
-                  const report = m.report!;
-                  const escalationCount = report.escalations.length;
-                  const incidentCount = report.productionHealth.length;
-                  const deliveryCounts = report.delivery.reduce((acc, d) => { acc[d.sprintGoalStatus] = (acc[d.sprintGoalStatus] ?? 0) + 1; return acc; }, {} as Record<string, number>);
-                  const isOffTrack = report.healthIndicator === "off-track";
-                  return (
-                    <div key={m.userId} className={`py-4 space-y-2 ${isOffTrack ? "bg-destructive/[0.03] -mx-5 px-5 rounded-lg" : ""}`}>
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <Link href={reportHref(m.userId, weekId)} className="text-[0.85rem] font-semibold hover:underline">{m.userName}</Link>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={HEALTH_BADGE[report.healthIndicator]}>{HEALTH_LABELS[report.healthIndicator]}</Badge>
-                          <LinkButton href={reportHref(m.userId, weekId)} variant="ghost" size="xs" className="text-muted-foreground/40">View</LinkButton>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 text-[0.7rem]">
-                        {escalationCount > 0 && <span className="inline-flex items-center gap-1 rounded-full border border-destructive/20 bg-destructive/5 px-2 py-0.5 text-destructive/80">{escalationCount} escalation{escalationCount > 1 ? "s" : ""}</span>}
-                        {incidentCount > 0 && <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-accent">{incidentCount} incident{incidentCount > 1 ? "s" : ""}</span>}
-                        {report.delivery.length > 0 && <span className="inline-flex items-center gap-1 rounded-full border border-border/30 bg-muted/30 px-2 py-0.5 text-muted-foreground/70">{["Achieved", "Ongoing", "Missed"].filter((s) => deliveryCounts[s]).map((s) => `${deliveryCounts[s]} ${s}`).join(" · ")}</span>}
-                      </div>
-                      {report.lookAhead.priority1 && <p className="text-[0.75rem] text-muted-foreground/60">{report.lookAhead.priority1}</p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card><CardHeader className="pb-3"><CardTitle className="text-[0.85rem]">Escalations{allEscalations.length > 0 && <span className="ml-2 text-[0.7rem] text-muted-foreground/50 font-normal">{allEscalations.length}</span>}</CardTitle></CardHeader><CardContent>{allEscalations.length === 0 ? <p className="text-[0.8rem] text-muted-foreground/50">None reported.</p> : <div className="space-y-3">{allEscalations.map((e, i) => (<div key={i} className="rounded-xl border border-border/30 bg-muted/20 p-3 space-y-1.5 text-sm"><div className="flex items-center gap-2"><span className="font-medium text-[0.85rem]">{e.project}</span><Link href={reportHref(e.userId, weekId)}><Badge variant="outline" className="text-[0.65rem] cursor-pointer hover:bg-muted">{e.userName}</Badge></Link></div><p className="text-muted-foreground/70 text-[0.8rem]">{e.topic}</p><p className="text-[0.8rem]"><span className="font-medium">Problem:</span> {e.problem}</p><p className="text-[0.8rem]"><span className="font-medium">Impact:</span> {e.impact}</p><p className="text-[0.8rem]"><span className="font-medium">Ask:</span> {e.ask}</p></div>))}</div>}</CardContent></Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <Card><CardHeader className="pb-3"><CardTitle className="text-[0.85rem]">Production Incidents{allIncidents.length > 0 && <span className="ml-2 text-[0.7rem] text-muted-foreground/50 font-normal">{allIncidents.length}</span>}</CardTitle></CardHeader><CardContent>{allIncidents.length === 0 ? <p className="text-[0.8rem] text-muted-foreground/50">None reported.</p> : <div className="space-y-3">{allIncidents.map((inc, i) => (<div key={i} className="rounded-xl border border-border/30 bg-muted/20 p-3 space-y-1.5 text-sm"><div className="flex items-center gap-2"><span className="font-medium text-[0.85rem]">{inc.project}</span><Link href={reportHref(inc.userId, weekId)}><Badge variant="outline" className="text-[0.65rem] cursor-pointer hover:bg-muted">{inc.userName}</Badge></Link></div><p className="text-muted-foreground/70 text-[0.8rem]">{inc.topic}</p><p className="text-[0.8rem]"><span className="font-medium">Root cause:</span> {inc.rootCause}</p><p className="text-[0.8rem]"><span className="font-medium">Next:</span> {inc.nextAction}</p></div>))}</div>}</CardContent></Card>
-
-            <Card><CardHeader className="pb-3"><CardTitle className="text-[0.85rem]">Sprint Goals</CardTitle></CardHeader><CardContent><div className="space-y-4">{present.map((m) => (<div key={m.userId}><Link href={reportHref(m.userId, weekId)} className="text-[0.8rem] font-medium hover:underline">{m.userName}</Link>{m.report!.delivery.length === 0 ? <p className="text-[0.75rem] text-muted-foreground/50 ml-2 mt-1">No delivery items.</p> : <div className="space-y-2 ml-2 mt-2">{m.report!.delivery.map((d, i) => (<div key={i} className="rounded-lg border border-border/30 bg-muted/20 p-2.5 text-sm space-y-1"><div className="flex items-center gap-2"><span className="font-medium text-[0.8rem]">{d.project}</span><Badge variant={SPRINT_BADGE[d.sprintGoalStatus]} className="text-[0.6rem]">{d.sprintGoalStatus}</Badge></div><p className="text-muted-foreground/70 text-[0.75rem]">{d.progress}</p>{d.nextSteps && <p className="text-[0.75rem]"><span className="font-medium">Next:</span> {d.nextSteps}</p>}</div>))}</div>}</div>))}</div></CardContent></Card>
-          </div>
-
-          <Card><CardHeader className="pb-3"><CardTitle className="text-[0.85rem]">Look Ahead</CardTitle></CardHeader><CardContent><div className="divide-y divide-border/30">{present.map((m) => (<div key={m.userId} className="py-3"><Link href={reportHref(m.userId, weekId)} className="text-[0.8rem] font-medium hover:underline">{m.userName}</Link><ol className="list-decimal list-inside text-[0.8rem] text-muted-foreground/70 space-y-0.5 ml-2 mt-1">{m.report!.lookAhead.priority1 && <li>{m.report!.lookAhead.priority1}</li>}{m.report!.lookAhead.priority2 && <li>{m.report!.lookAhead.priority2}</li>}</ol></div>))}</div></CardContent></Card>
-        </>
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground/60" />
+              <CardTitle className="text-[0.85rem]">Team Status</CardTitle>
+              <span className="text-[0.7rem] text-muted-foreground/50 ml-auto">{present.length} submitted</span>
+            </div>
+          </CardHeader>
+          <CardContent className="divide-y divide-border/30 pt-0 px-0 pb-0">
+            {sortedPresent.map((m) => {
+              const report = m.report!;
+              const escalationCount = report.escalations.length;
+              const incidentCount = report.productionHealth.length;
+              return (
+                <Link key={m.userId} href={reportHref(m.userId, weekId)} className="group flex items-center gap-3 px-5 py-3 hover:bg-muted/30 transition-colors">
+                  <span className={`size-2 rounded-full shrink-0 ${HEALTH_DOT[report.healthIndicator]}`} />
+                  <span className="text-[0.85rem] font-medium w-24 sm:w-32 shrink-0 truncate">{m.userName}</span>
+                  <Badge variant={HEALTH_BADGE[report.healthIndicator]} className="shrink-0 hidden sm:inline-flex text-[0.6rem]">{HEALTH_LABELS[report.healthIndicator]}</Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {escalationCount > 0 && <Badge variant="destructive" className="text-[0.6rem]">{escalationCount} esc</Badge>}
+                    {incidentCount > 0 && <Badge variant="accent" className="text-[0.6rem]">{incidentCount} inc</Badge>}
+                  </div>
+                  <span className="text-[0.75rem] text-muted-foreground/60 flex-1 min-w-0 truncate hidden md:block">{report.lookAhead.priority1 || "—"}</span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-foreground shrink-0 transition-colors" />
+                </Link>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
 
       {!generating && summary && (

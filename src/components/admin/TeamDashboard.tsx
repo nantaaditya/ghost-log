@@ -5,10 +5,12 @@ import { getCurrentWeekId } from "@/lib/week/iso-week";
 import { readFile } from "@/lib/graph/files";
 import { buildReportPath } from "@/lib/graph/paths";
 import { parseReport } from "@/lib/markdown/parse";
+import { getHealthTrend } from "@/lib/db/reports";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/link-button";
 import { PageShell } from "@/components/layout/PageShell";
+import HealthTrendChart from "@/components/admin/HealthTrendChart";
 import { HEALTH_LABELS } from "@/types/report";
 import { TrendingUp, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import type { ReportData } from "@/types/report";
@@ -17,9 +19,10 @@ type ParsedMember = { userId: string; userName: string; report: ReportData };
 
 export default async function TeamDashboard() {
   const weekId = getCurrentWeekId();
-  const [activeMembers, submitted] = await Promise.all([
+  const [activeMembers, submitted, trend] = await Promise.all([
     db.select({ id: users.id, name: users.name }).from(users).where(and(eq(users.role, "member"), eq(users.status, "active"))),
     db.select({ userId: reports.userId, userName: users.name }).from(reports).innerJoin(users, eq(reports.userId, users.id)).where(and(eq(reports.weekId, weekId), eq(reports.status, "submitted"))),
+    getHealthTrend(8),
   ]);
 
   const settled = await Promise.allSettled(submitted.map(async ({ userId, userName }) => {
@@ -62,6 +65,11 @@ export default async function TeamDashboard() {
           <div><p className={`text-2xl font-bold tabular-nums ${offTrackMembers.length > 0 ? "text-destructive" : "text-muted-foreground/40"}`}>{healthCounts["off-track"]}</p><p className="text-[0.7rem] text-muted-foreground/70">Off Track</p></div>
         </CardContent></Card>
       </div>
+
+      <Card className="border-border/40">
+        <CardHeader className="pb-2"><CardTitle className="text-[0.8rem] text-muted-foreground">8-Week Trend</CardTitle></CardHeader>
+        <CardContent className="pt-0"><HealthTrendChart weeks={trend} variant="compact" /></CardContent>
+      </Card>
 
       {offTrackMembers.length > 0 && (
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3">

@@ -70,7 +70,14 @@ export async function PUT(req: Request, { params }: Params): Promise<Response> {
   const onedrivePath = buildReportPath(user.name, weekId);
   const markdown = serializeReport(reportData);
   await writeFile(onedrivePath, markdown);
-  await upsertSubmittedReport({ userId: user.id, weekId, onedrivePath });
+  await upsertSubmittedReport({
+    userId: user.id,
+    weekId,
+    onedrivePath,
+    healthIndicator: reportData.healthIndicator,
+    escalationCount: reportData.escalations.length,
+    incidentCount: reportData.productionHealth.length,
+  });
 
   return Response.json({ success: true, data: { weekId } });
 }

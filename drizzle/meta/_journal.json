@@ -29,6 +29,13 @@
       "when": 1786371226560,
       "tag": "0003_easy_whirlwind",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787469460559,
+      "tag": "0004_military_catseye",
+      "breakpoints": true
     }
   ]
 }

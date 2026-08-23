@@ -104,6 +104,20 @@ async function run() {
   `;
 
   console.log("✓ Migration 0003 applied — announcement_comments table ready");
+
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'health_indicator') THEN
+        CREATE TYPE "public"."health_indicator" AS ENUM('on-track', 'at-risk', 'off-track');
+      END IF;
+    END $$
+  `;
+
+  await sql`ALTER TABLE "reports" ADD COLUMN IF NOT EXISTS "health_indicator" "health_indicator"`;
+  await sql`ALTER TABLE "reports" ADD COLUMN IF NOT EXISTS "escalation_count" integer`;
+  await sql`ALTER TABLE "reports" ADD COLUMN IF NOT EXISTS "incident_count" integer`;
+
+  console.log("✓ Migration 0004 applied — reports health_indicator/escalation_count/incident_count ready");
 }
 
 run()
