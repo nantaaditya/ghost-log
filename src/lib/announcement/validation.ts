@@ -33,6 +33,7 @@ export const createAnnouncementSchema = z.object({
     .string()
     .max(MAX_TITLE_LEN, `Image alt must be at most ${MAX_TITLE_LEN} characters`)
     .optional(),
+  imageDisplayMode: z.enum(["cover", "contain"]).optional(),
   publishedAt: z.string().datetime().optional().nullable(),
   expiresAt: z.string().datetime().optional().nullable(),
 });

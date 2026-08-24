@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -189,4 +190,12 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   html { scroll-behavior: auto; }
+}
+
+/* MDXEditor's dropdowns (block type, code language, etc.) use Radix UI, which portals its open
+   content to document.body with an inline z-index inherited from MDXEditor's own low z-index
+   (3). Our Dialog sits at z-50, so without this the dropdown renders invisibly behind it.
+   !important is required because Radix sets z-index inline via style, not via a CSS class. */
+[data-radix-popper-content-wrapper] {
+  z-index: 60 !important;
 }

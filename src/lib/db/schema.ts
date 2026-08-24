@@ -14,6 +14,7 @@ export const announcementStatusEnum = pgEnum("announcement_status", ["draft", "p
 export const userStatusEnum = pgEnum("user_status", ["pending", "active", "inactive"]);
 export const reportStatusEnum = pgEnum("report_status", ["draft", "submitted"]);
 export const healthIndicatorEnum = pgEnum("health_indicator", ["on-track", "at-risk", "off-track"]);
+export const imageDisplayModeEnum = pgEnum("image_display_mode", ["cover", "contain"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -87,6 +88,7 @@ export const announcements = pgTable("announcements", {
   body: text("body").notNull(),
   imageData: text("image_data"),
   imageAlt: varchar("image_alt", { length: 150 }),
+  imageDisplayMode: imageDisplayModeEnum("image_display_mode").default("contain"),
   authorId: uuid("author_id")
     .notNull()
     .references(() => users.id),

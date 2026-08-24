@@ -118,6 +118,18 @@ async function run() {
   await sql`ALTER TABLE "reports" ADD COLUMN IF NOT EXISTS "incident_count" integer`;
 
   console.log("✓ Migration 0004 applied — reports health_indicator/escalation_count/incident_count ready");
+
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'image_display_mode') THEN
+        CREATE TYPE "public"."image_display_mode" AS ENUM('cover', 'contain');
+      END IF;
+    END $$
+  `;
+
+  await sql`ALTER TABLE "announcements" ADD COLUMN IF NOT EXISTS "image_display_mode" "image_display_mode" DEFAULT 'contain'`;
+
+  console.log("✓ Migration 0005 applied — announcements image_display_mode ready");
 }
 
 run()

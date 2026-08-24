@@ -27,7 +27,7 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  const { title, body: mdBody, imageData, imageAlt, publishedAt, expiresAt } = parsed.data;
+  const { title, body: mdBody, imageData, imageAlt, imageDisplayMode, publishedAt, expiresAt } = parsed.data;
   const authorId = (session.user as { id: string }).id;
 
   const announcement = await create({
@@ -35,6 +35,7 @@ export async function POST(req: Request): Promise<Response> {
     body: mdBody,
     imageData: imageData ?? null,
     imageAlt: imageAlt ?? null,
+    imageDisplayMode: imageDisplayMode ?? "contain",
     authorId,
     publishedAt: publishedAt ? new Date(publishedAt) : null,
     expiresAt: expiresAt ? new Date(expiresAt) : null,
