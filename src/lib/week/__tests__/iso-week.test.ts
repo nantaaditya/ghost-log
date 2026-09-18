@@ -7,6 +7,7 @@ import {
   getRecentPastWeekIds,
   getWeekMonthLabel,
   groupWeekIdsByMonth,
+  sortWeekIdsDesc,
 } from "../iso-week";
 
 describe("formatWeekId", () => {
@@ -138,6 +139,38 @@ describe("getWeekMonthLabel", () => {
 
   it("throws for an invalid weekId", () => {
     expect(() => getWeekMonthLabel("not-a-week")).toThrow("Invalid weekId");
+  });
+});
+
+describe("sortWeekIdsDesc", () => {
+  it("orders by year, then month, then week-of-month — not by string value", () => {
+    // Lexicographically "W5-01-2026" > "W1-12-2026", but Dec 2026 is chronologically later.
+    expect(sortWeekIdsDesc(["W5-01-2026", "W1-12-2026"])).toEqual(["W1-12-2026", "W5-01-2026"]);
+  });
+
+  it("sorts newest-first across years", () => {
+    expect(sortWeekIdsDesc(["W1-01-2025", "W1-01-2027", "W1-01-2026"])).toEqual([
+      "W1-01-2027",
+      "W1-01-2026",
+      "W1-01-2025",
+    ]);
+  });
+
+  it("sorts newest-first within the same month", () => {
+    expect(sortWeekIdsDesc(["W1-07-2026", "W3-07-2026", "W2-07-2026"])).toEqual([
+      "W3-07-2026",
+      "W2-07-2026",
+      "W1-07-2026",
+    ]);
+  });
+
+  it("drops unparseable weekIds instead of throwing", () => {
+    expect(() => sortWeekIdsDesc(["W2-07-2026", "not-a-week"])).not.toThrow();
+    expect(sortWeekIdsDesc(["W2-07-2026", "not-a-week"])).toEqual(["W2-07-2026"]);
+  });
+
+  it("returns an empty array for empty input", () => {
+    expect(sortWeekIdsDesc([])).toEqual([]);
   });
 });
 

@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth/config";
 import { db } from "@/lib/db/client";
 import { reports, users } from "@/lib/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { isValidWeekId, getCurrentWeekId } from "@/lib/week/iso-week";
+import { isValidWeekId, getCurrentWeekId, sortWeekIdsDesc } from "@/lib/week/iso-week";
 import { readFile } from "@/lib/graph/files";
 import { buildReportPath } from "@/lib/graph/paths";
 import { parseReport } from "@/lib/markdown/parse";
@@ -31,13 +31,13 @@ export default async function RecapPage({ searchParams }: Props) {
   const { week } = await searchParams;
   const weekId = week && isValidWeekId(week) ? week : getCurrentWeekId();
 
-  // Distinct weeks that have at least one submitted report (for the selector)
+  // Distinct weeks that have at least one submitted report (for the selector).
+  // weekId is a "W{n}-{MM}-{YYYY}" string, so it can't be ordered correctly in SQL —
+  // sort chronologically (year, then month, then week) after fetching instead.
   const availableWeeks = await db
     .selectDistinct({ weekId: reports.weekId })
     .from(reports)
-    .where(eq(reports.status, "submitted"))
-    .orderBy(desc(reports.weekId))
-    .limit(20);
+    .where(eq(reports.status, "submitted"));
 
   const submitted = await db
     .select({ userId: reports.userId, userName: users.name })
@@ -59,8 +59,8 @@ export default async function RecapPage({ searchParams }: Props) {
     getHealthTrend(8),
   ]);
 
-  const weeks = availableWeeks.map((r) => r.weekId);
-  if (!weeks.includes(weekId)) weeks.unshift(weekId);
+  const recentWeeks = sortWeekIdsDesc(availableWeeks.map((r) => r.weekId)).slice(0, 20);
+  const weeks = recentWeeks.includes(weekId) ? recentWeeks : sortWeekIdsDesc([weekId, ...recentWeeks]);
 
   return (
     <PageShell maxWidth="4xl">

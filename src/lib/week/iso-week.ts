@@ -59,6 +59,17 @@ export function getWeekMonthLabel(weekId: string): string {
 }
 
 /**
+ * Sorts weekIds newest-first by actual calendar week (year, then month, then week-of-month),
+ * not by string order — weekIds like "W5-01-2026" otherwise sort above "W1-12-2026" even
+ * though they're chronologically earlier. Unparseable ids are dropped.
+ */
+export function sortWeekIdsDesc(weekIds: readonly string[]): string[] {
+  return weekIds
+    .filter(isValidWeekId)
+    .sort((a, b) => (parseWeekId(b)?.getTime() ?? 0) - (parseWeekId(a)?.getTime() ?? 0));
+}
+
+/**
  * Sorts weekId-keyed items newest-first by actual calendar week, then groups consecutive
  * same-month items. Items with an unparseable weekId are dropped rather than throwing, so
  * one corrupt row can't break rendering for every item in the list.
@@ -66,10 +77,11 @@ export function getWeekMonthLabel(weekId: string): string {
 export function groupWeekIdsByMonth<T extends { weekId: string }>(
   items: readonly T[],
 ): { monthLabel: string; items: T[] }[] {
-  const valid = items.filter((item) => isValidWeekId(item.weekId));
-  const sorted = [...valid].sort(
-    (a, b) => (parseWeekId(b.weekId)?.getTime() ?? 0) - (parseWeekId(a.weekId)?.getTime() ?? 0),
-  );
+  const order = sortWeekIdsDesc(items.map((item) => item.weekId));
+  const rank = new Map(order.map((weekId, index) => [weekId, index]));
+  const sorted = items
+    .filter((item) => rank.has(item.weekId))
+    .sort((a, b) => rank.get(a.weekId)! - rank.get(b.weekId)!);
 
   const groups: { monthLabel: string; items: T[] }[] = [];
   for (const item of sorted) {
