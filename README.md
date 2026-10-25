@@ -13,6 +13,7 @@ Weekly engineering report platform for engineering managers. Team members submit
 - **Admin settings** — update name, email, and password from the admin panel
 - **First-run bootstrap** — admin account auto-created from env vars on first request; no seed script needed
 - **Draft autosave** — report drafts saved to `localStorage` per week
+- **1:1 chat and KPI coaching** — private member ⇄ manager conversation at `/coach`, each member's own survey results, and a manager-edited 2027 KPI plan (see [1:1 and KPI coaching](#11-and-kpi-coaching))
 
 ## Tech Stack
 
@@ -96,7 +97,52 @@ Reports are stored at `{ONEDRIVE_BASE_PATH}/{MemberName}/W{week}-{MM}-{YYYY}.md`
 
 AI summaries are stored at `{ONEDRIVE_BASE_PATH}/{weekId}_summary.md` (e.g. `WeeklyReports/W4-04-2026_summary.md`).
 
+## 1:1 and KPI coaching
+
+`/coach` gives every member a private thread with their manager, their own results from the 2026
+Career & Character self-reflection survey, and a KPI plan the manager shares when ready.
+
+**Who sees what**
+
+| | Member | Admin |
+|---|---|---|
+| Chat thread | their own | any member's |
+| Survey results | their own answers, counts and profile | all of it, plus the manager notes |
+| Manager notes (hypotheses, 1:1 openers) | never | yes |
+| KPI goals | only goals the manager has **shared** | drafts and shared; create, edit, share, delete |
+
+- Access is decided from the **database** (role and `active` status) on every request, not from the
+  session token, so a deactivated or demoted user loses access immediately. Any account with the
+  `admin` role can read every thread.
+- Survey scores are counts of a pick-1-of-6 question, shown as "N of 12" with no percentages or
+  rankings between people. The page says plainly that it is a self-reflection, not a rating.
+- Chat uses polling (about every 8 s while the tab is visible), not WebSockets. New messages trigger
+  one notification email per sender and thread per 15 minutes; the email never contains the message.
+- There is no AI at runtime. Proposals are generated on your own machine (below) and reviewed first.
+
+**Preparing a cycle** (the survey data lives outside this repo, in `~/projects/work/kpi/2026`)
+
+1. Apply the migration: `pnpm db:migrate` (adds `coach_messages`, `kpi_profiles`, `kpi_goals`).
+2. Export results: `cd ~/projects/work/kpi/2026 && python3 dashboard/build_dashboard.py --export-json /tmp/kpi-2026.json --no-open`
+3. Optional, **sends each person's answers to Claude through your signed-in `claude` CLI**
+   (all tools disabled): `pnpm kpi:propose /tmp/kpi-2026.json`. Try one person first with
+   `--only "Name"`. It writes `…with-goals.json`, mode 0600. Read and edit the goals.
+4. Dry run, then import: `pnpm kpi:import <file> --dry-run`, then without `--dry-run`. Survey
+   names must match account names; otherwise pass `--map names.json` (`{"Survey Name": "email"}`).
+   Nothing is written if any name is unmatched or ambiguous. Re-importing is safe: unchanged
+   people are skipped, notes omitted from an export are kept, and goals a person already has are
+   never overwritten. Imported goals are private drafts until you share them in `/coach`.
+5. Delete the export files afterwards; they contain personal answers.
+
+The years the page shows are set in `src/lib/kpi/cycle.ts` (`SURVEY_CYCLE_YEAR`, `PLAN_CYCLE_YEAR`);
+the import warns if an export would not be visible. The skill framework (card management and
+financial systems, plus six behavioral tracks) is a **draft** in `src/lib/kpi/framework/`: review it
+against your own job levels before sharing plans.
+
 ## Deployment
+
+Run `pnpm db:migrate` **before** deploying a build that includes `/coach`. (The dashboard's unread
+badge degrades to 0 if the tables are missing, but `/coach` itself needs them.)
 
 Deploy to [Vercel](https://vercel.com) (recommended):
 
@@ -117,3 +163,5 @@ Deploy to [Vercel](https://vercel.com) (recommended):
 | `pnpm db:migrate` | Run pending Drizzle migrations |
 | `pnpm db:push` | Push schema changes directly (dev shortcut) |
 | `pnpm db:generate` | Generate migration files from schema changes |
+| `pnpm kpi:propose <export.json>` | Draft KPI goals per person with your local `claude` CLI (tools disabled) |
+| `pnpm kpi:import <export.json>` | Import 2026 survey results and draft goals (`--dry-run`, `--map`) |

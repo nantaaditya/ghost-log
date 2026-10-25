@@ -130,6 +130,100 @@ async function run() {
   await sql`ALTER TABLE "announcements" ADD COLUMN IF NOT EXISTS "image_display_mode" "image_display_mode" DEFAULT 'contain'`;
 
   console.log("✓ Migration 0005 applied — announcements image_display_mode ready");
+
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'kpi_goal_status') THEN
+        CREATE TYPE "public"."kpi_goal_status" AS ENUM('draft', 'shared');
+      END IF;
+    END $$
+  `;
+
+  await sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'kpi_goal_type') THEN
+        CREATE TYPE "public"."kpi_goal_type" AS ENUM('soft', 'hard');
+      END IF;
+    END $$
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS "coach_messages" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "member_id" uuid NOT NULL,
+      "sender_id" uuid NOT NULL,
+      "body" text NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "read_at" timestamp,
+      "notified_at" timestamp
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS "kpi_goals" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "user_id" uuid NOT NULL,
+      "cycle_year" integer NOT NULL,
+      "type" "kpi_goal_type" NOT NULL,
+      "skill_key" varchar(60),
+      "title" varchar(150) NOT NULL,
+      "measure" text NOT NULL,
+      "milestones" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "development_action" text NOT NULL,
+      "evidence_source" text,
+      "status" "kpi_goal_status" DEFAULT 'draft' NOT NULL,
+      "sort_order" integer DEFAULT 0 NOT NULL,
+      "created_at" timestamp DEFAULT now() NOT NULL,
+      "updated_at" timestamp DEFAULT now() NOT NULL
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS "kpi_profiles" (
+      "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "user_id" uuid NOT NULL,
+      "cycle_year" integer NOT NULL,
+      "fingerprint" varchar(64) NOT NULL,
+      "scores" jsonb NOT NULL,
+      "profile" jsonb NOT NULL,
+      "answers" jsonb NOT NULL,
+      "member_summary" text,
+      "manager_summary" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "manager_decisions" jsonb DEFAULT '[]'::jsonb NOT NULL,
+      "imported_at" timestamp DEFAULT now() NOT NULL,
+      CONSTRAINT "kpi_profiles_user_id_cycle_year_unique" UNIQUE("user_id","cycle_year")
+    )
+  `;
+
+  const foreignKeys: ReadonlyArray<readonly [string, string, string]> = [
+    ["coach_messages", "coach_messages_member_id_users_id_fk", "member_id"],
+    ["coach_messages", "coach_messages_sender_id_users_id_fk", "sender_id"],
+    ["kpi_goals", "kpi_goals_user_id_users_id_fk", "user_id"],
+    ["kpi_profiles", "kpi_profiles_user_id_users_id_fk", "user_id"],
+  ];
+
+  for (const [table, constraint, column] of foreignKeys) {
+    // Identifiers come from the constant list above, never from user input.
+    await sql.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints
+          WHERE constraint_name = '${constraint}'
+        ) THEN
+          ALTER TABLE "${table}"
+            ADD CONSTRAINT "${constraint}"
+            FOREIGN KEY ("${column}") REFERENCES "public"."users"("id")
+            ON DELETE no action ON UPDATE no action;
+        END IF;
+      END $$
+    `);
+  }
+
+  await sql`CREATE INDEX IF NOT EXISTS "coach_messages_member_id_created_at_idx" ON "coach_messages" USING btree ("member_id","created_at")`;
+  await sql`CREATE INDEX IF NOT EXISTS "coach_messages_sender_id_created_at_idx" ON "coach_messages" USING btree ("sender_id","created_at")`;
+  await sql`CREATE INDEX IF NOT EXISTS "kpi_goals_user_id_cycle_year_idx" ON "kpi_goals" USING btree ("user_id","cycle_year")`;
+
+  console.log("✓ Migration 0006 applied — coach_messages, kpi_profiles, kpi_goals ready");
 }
 
 run()

@@ -112,6 +112,7 @@ export default function AdminClient({ users: initialUsers, recentReports, onedri
           <div className="flex items-center gap-1">
             <ThemeToggle />
             <LinkButton href="/" variant="ghost" size="sm">← Dashboard</LinkButton>
+            <LinkButton href="/coach" variant="ghost" size="sm">1:1s</LinkButton>
             <LinkButton href="/admin/announcements" variant="ghost" size="sm">Announcements</LinkButton>
             <LinkButton href="/admin/recap" variant="ghost" size="sm">Recap</LinkButton>
             <LinkButton href="/admin/settings" variant="ghost" size="sm">Settings</LinkButton>

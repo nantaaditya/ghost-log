@@ -15,10 +15,12 @@ import { PageShell } from "@/components/layout/PageShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
   ShieldCheck, Plus, Clock, PenLine, CircleCheck, Users,
-  FileText, ArrowRight, ChevronRight,
+  FileText, ArrowRight, ChevronRight, MessagesSquare,
 } from "lucide-react";
 import AnnouncementBanner from "@/components/announcement/AnnouncementBanner";
 import { listPublished } from "@/lib/announcement/repository";
+import { getUnreadTotal } from "@/lib/coach/unread";
+import { getActiveViewer } from "@/lib/coach/viewer";
 
 function initials(name: string) {
   return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
@@ -34,7 +36,7 @@ export default async function DashboardPage() {
 
   const now = new Date();
   const recentWeekIds = getRecentPastWeekIds(8, now);
-  const [userReports, teamPastRaw, publishedAnnouncements, recentUserReports] = await Promise.all([
+  const [userReports, teamPastRaw, publishedAnnouncements, recentUserReports, unreadMessages] = await Promise.all([
     db
       .select()
       .from(reports)
@@ -51,6 +53,8 @@ export default async function DashboardPage() {
       .select({ weekId: reports.weekId })
       .from(reports)
       .where(and(eq(reports.userId, session.user.id), inArray(reports.weekId, recentWeekIds))),
+    // Role comes from the database, not the session token, which can be up to 30 days stale.
+    getActiveViewer().then((viewer) => (viewer ? getUnreadTotal(viewer) : 0)),
   ]);
 
   const currentWeekReport = userReports.find((r) => r.weekId === currentWeekId);
@@ -80,6 +84,23 @@ export default async function DashboardPage() {
         actions={
           <div className="flex items-center gap-1">
             <ThemeToggle />
+            <LinkButton
+              href="/coach"
+              variant="ghost"
+              size="sm"
+              aria-label={unreadMessages > 0 ? `1:1, ${unreadMessages} unread` : "1:1"}
+            >
+              <MessagesSquare className="h-3.5 w-3.5" />
+              1:1
+              {unreadMessages > 0 && (
+                <span
+                  aria-hidden
+                  className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[0.65rem] font-semibold text-primary-foreground"
+                >
+                  {unreadMessages}
+                </span>
+              )}
+            </LinkButton>
             {isAdmin && (
               <LinkButton href="/admin" variant="ghost" size="sm">
                 <ShieldCheck className="h-3.5 w-3.5" />

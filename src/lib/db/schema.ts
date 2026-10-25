@@ -7,6 +7,8 @@ import {
   uuid,
   unique,
   integer,
+  jsonb,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["admin", "member"]);
@@ -15,6 +17,8 @@ export const userStatusEnum = pgEnum("user_status", ["pending", "active", "inact
 export const reportStatusEnum = pgEnum("report_status", ["draft", "submitted"]);
 export const healthIndicatorEnum = pgEnum("health_indicator", ["on-track", "at-risk", "off-track"]);
 export const imageDisplayModeEnum = pgEnum("image_display_mode", ["cover", "contain"]);
+export const kpiGoalTypeEnum = pgEnum("kpi_goal_type", ["soft", "hard"]);
+export const kpiGoalStatusEnum = pgEnum("kpi_goal_status", ["draft", "shared"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -116,3 +120,94 @@ export const announcementComments = pgTable("announcement_comments", {
 
 export type AnnouncementComment = typeof announcementComments.$inferSelect;
 export type NewAnnouncementComment = typeof announcementComments.$inferInsert;
+
+export type KpiInsightItem = { judul: string; isi: string };
+export type KpiMilestone = { quarter: "Q1" | "Q2" | "Q3" | "Q4"; description: string };
+// Counts only: Career Growth answers are ipsative (pick 1 of 6), so these are never percentages.
+export type KpiScore = { kode: string; dimensi: string; jumlah: number; total: number };
+export type KpiAnswer = {
+  q: string;
+  bagian: string;
+  pertanyaan: string;
+  jawaban: string;
+  kategori: string;
+};
+
+// Imported survey results. `managerSummary` / `managerDecisions` are admin-only
+// hypotheses and must never reach a member (see lib/coach/access.ts).
+export const kpiProfiles = pgTable(
+  "kpi_profiles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    cycleYear: integer("cycle_year").notNull(),
+    fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
+    scores: jsonb("scores").$type<KpiScore[]>().notNull(),
+    profile: jsonb("profile").$type<Record<string, string>>().notNull(),
+    answers: jsonb("answers").$type<KpiAnswer[]>().notNull(),
+    memberSummary: text("member_summary"),
+    managerSummary: jsonb("manager_summary").$type<KpiInsightItem[]>().notNull().default([]),
+    managerDecisions: jsonb("manager_decisions").$type<KpiInsightItem[]>().notNull().default([]),
+    importedAt: timestamp("imported_at").notNull().defaultNow(),
+  },
+  (table) => [unique("kpi_profiles_user_id_cycle_year_unique").on(table.userId, table.cycleYear)],
+);
+
+export type KpiProfile = typeof kpiProfiles.$inferSelect;
+export type NewKpiProfile = typeof kpiProfiles.$inferInsert;
+
+// One 1:1 thread per member: the thread is identified by `memberId`; `senderId`
+// is either that member or an admin.
+export const coachMessages = pgTable(
+  "coach_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    memberId: uuid("member_id")
+      .notNull()
+      .references(() => users.id),
+    senderId: uuid("sender_id")
+      .notNull()
+      .references(() => users.id),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    readAt: timestamp("read_at"),
+    // Set when a "new message" email was actually sent for this message; the email throttle
+    // keys off it so a failed send never suppresses later notifications.
+    notifiedAt: timestamp("notified_at"),
+  },
+  (table) => [
+    index("coach_messages_member_id_created_at_idx").on(table.memberId, table.createdAt),
+    index("coach_messages_sender_id_created_at_idx").on(table.senderId, table.createdAt),
+  ],
+);
+
+export type CoachMessage = typeof coachMessages.$inferSelect;
+export type NewCoachMessage = typeof coachMessages.$inferInsert;
+
+export const kpiGoals = pgTable(
+  "kpi_goals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    cycleYear: integer("cycle_year").notNull(),
+    type: kpiGoalTypeEnum("type").notNull(),
+    skillKey: varchar("skill_key", { length: 60 }),
+    title: varchar("title", { length: 150 }).notNull(),
+    measure: text("measure").notNull(),
+    milestones: jsonb("milestones").$type<KpiMilestone[]>().notNull().default([]),
+    developmentAction: text("development_action").notNull(),
+    evidenceSource: text("evidence_source"),
+    status: kpiGoalStatusEnum("status").notNull().default("draft"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("kpi_goals_user_id_cycle_year_idx").on(table.userId, table.cycleYear)],
+);
+
+export type KpiGoal = typeof kpiGoals.$inferSelect;
+export type NewKpiGoal = typeof kpiGoals.$inferInsert;

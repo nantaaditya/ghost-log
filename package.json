@@ -10,6 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push",
+    "kpi:import": "tsx scripts/kpi-import.ts",
+    "kpi:propose": "tsx scripts/kpi-propose.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -45,6 +47,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^6.9.1",
